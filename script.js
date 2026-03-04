@@ -110,11 +110,11 @@ function initTypewriter() {
     const el = document.getElementById('typewriter');
     if (!el) return;
     const texts = [
-        'Android & (KMP\\CMP) Apps',
-        'Kotlin Solutions ',
-        'Jetpack Compose UI ',
-        'Clean Architecture ',
-        'Scalable Apps ',
+        'Android Apps 📱',
+        'Kotlin Solutions 🛠️',
+        'Jetpack Compose UI ✨',
+        'Clean Architecture 🏗️',
+        'Scalable Apps 🚀',
     ];
     let i = 0, j = 0, isDeleting = false;
     function type() {
@@ -204,8 +204,16 @@ async function loadTestimonials() {
     const loader = document.getElementById('testimonials-loader');
 
     try {
-        const q = query(collection(db, 'testimonials'), where('status', '==', 'approved'), orderBy('timestamp', 'desc'));
-        const snap = await getDocs(q);
+        // Try with orderBy first (needs composite index), fallback without it
+        let snap;
+        try {
+            const q = query(collection(db, 'testimonials'), where('status', '==', 'approved'), orderBy('timestamp', 'desc'));
+            snap = await getDocs(q);
+        } catch {
+            // Fallback: just filter by status without ordering (no index needed)
+            const q = query(collection(db, 'testimonials'), where('status', '==', 'approved'));
+            snap = await getDocs(q);
+        }
 
         if (loader) loader.remove();
         grid.innerHTML = '';
@@ -259,8 +267,14 @@ async function loadPendingTestimonials() {
     const list = document.getElementById('pending-testimonials-list');
     list.innerHTML = '<div class="loader mx-auto"></div>';
     try {
-        const q = query(collection(db, 'testimonials'), where('status', '==', 'pending'), orderBy('timestamp', 'desc'));
-        const snap = await getDocs(q);
+        let snap;
+        try {
+            const q = query(collection(db, 'testimonials'), where('status', '==', 'pending'), orderBy('timestamp', 'desc'));
+            snap = await getDocs(q);
+        } catch {
+            const q = query(collection(db, 'testimonials'), where('status', '==', 'pending'));
+            snap = await getDocs(q);
+        }
         list.innerHTML = '';
         if (snap.empty) {
             list.innerHTML = '<p class="text-center text-gray-400 py-8 font-mono text-sm">No pending reviews 🎉</p>';
@@ -725,7 +739,7 @@ function createProjectCard(p, theme) {
     card.className = `project-card ${theme.projectCard} cursor-pointer`;
     card.onclick = () => showProjectDetails(p.id);
     card.innerHTML = `
-        <img src="${p.thumbnail || 'https://placehold.co/600x400'}" alt="${p.title}" class="w-full h-72 object-cover">
+        <img src="${p.thumbnail || 'https://placehold.co/600x400'}" alt="${p.title}" class="w-full h-48 object-cover">
         <div class="p-5">
             <div class="flex justify-between items-start mb-2">
                 <h3 class="font-bold text-lg">${p.title}</h3>
