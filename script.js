@@ -528,7 +528,14 @@ async function loadAllData() {
 // ── TIMELINE (fully editable) ─────────────────────
 async function loadTimeline() {
     const cont = document.getElementById('timeline-container');
-    cont.innerHTML = '<div class="timeline-line"></div><div id="timeline-loader" class="loader mx-auto mt-8"></div>';
+    // Clear only dynamic items, keep the timeline-line
+    Array.from(cont.children).forEach(el => {
+        if (!el.classList.contains('timeline-line')) el.remove();
+    });
+    const loader = document.createElement('div');
+    loader.id = 'timeline-loader';
+    loader.className = 'loader mx-auto mt-8';
+    cont.appendChild(loader);
     try {
         let snap;
         try { snap = await getDocs(query(collection(db, 'timeline'), orderBy('createdAt', 'asc'))); }
@@ -767,12 +774,10 @@ function createProjectCard(p, theme) {
 }
 
 function renderAllContent() {
-    // Only re-render if initial load already completed (loaders are gone)
-    // This prevents double-loading on first applyTheme() call
     const principlesLoaded = !document.getElementById('principles-loader') && document.getElementById('principles-grid')?.children.length > 0;
     const skillsLoaded     = !document.getElementById('skills-loader')    && document.getElementById('skills-container')?.children.length > 0;
     const projectsLoaded   = !document.getElementById('projects-loader')  && document.getElementById('projects-grid')?.children.length > 0;
-    const timelineLoaded   = !document.getElementById('timeline-loader');
+    const timelineLoaded   = !document.getElementById('timeline-loader')  && document.getElementById('timeline-container')?.querySelectorAll('.timeline-item').length > 0;
 
     if (principlesLoaded) loadPrinciples();
     if (skillsLoaded)     loadSkills();
@@ -1408,4 +1413,3 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(err){ showToast('Error.','error'); console.error(err); }
     });
 });
-
