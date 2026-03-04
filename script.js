@@ -746,7 +746,7 @@ function createProjectCard(p, theme) {
     card.className = `project-card ${theme.projectCard} cursor-pointer`;
     card.onclick = () => showProjectDetails(p.id);
     card.innerHTML = `
-        <img src="${p.thumbnail || 'https://placehold.co/600x400'}" alt="${p.title}" class="w-full h-48 object-cover">
+        <img src="${p.thumbnail || 'https://placehold.co/600x400'}" alt="${p.title}" class="w-full h-72 object-cover">
         <div class="p-5">
             <div class="flex justify-between items-start mb-2">
                 <h3 class="font-bold text-lg">${p.title}</h3>
@@ -1413,3 +1413,4 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(err){ showToast('Error.','error'); console.error(err); }
     });
 });
+
