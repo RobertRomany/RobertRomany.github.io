@@ -109,12 +109,12 @@ function initMobileMenu() {
 function initTypewriter() {
     const el = document.getElementById('typewriter');
     if (!el) return;
-    const texts = [
-        'Android Apps 📱',
-        'Kotlin Solutions 🛠️',
-        'Jetpack Compose UI ✨',
-        'Clean Architecture 🏗️',
-        'Scalable Apps 🚀',
+        const texts = [
+        'Android & (KMP\\CMP) Apps',
+        'Kotlin Solutions ',
+        'Jetpack Compose UI ',
+        'Clean Architecture ',
+        'Scalable Apps ',
     ];
     let i = 0, j = 0, isDeleting = false;
     function type() {
@@ -1408,3 +1408,4 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(err){ showToast('Error.','error'); console.error(err); }
     });
 });
+
