@@ -1,618 +1,1364 @@
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head>
-    <meta name="description" content="Robert Romany - Android Developer Portfolio. Expert in Kotlin, Jetpack Compose, and Clean Architecture.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://robert-portfolio.web.app/">
-    <meta property="og:title" content="Robert Romany | Android Developer">
-    <meta property="og:description" content="Android developer portfolio featuring scalable, high-performance apps built with Kotlin, Jetpack Compose, and modern best practices.">
-    <meta property="og:image" content="https://i.postimg.cc/LXk8f0Dm/Coding-Logo.jpg">
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://robert-portfolio.web.app/">
-    <meta property="twitter:title" content="Robert Romany | Android Developer">
-    <meta property="twitter:description" content="Android developer portfolio featuring scalable, high-performance apps built with Kotlin, Jetpack Compose, and modern best practices.">
-    <meta property="twitter:image" content="https://i.postimg.cc/LXk8f0Dm/Coding-Logo.jpg">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Robert Romany | Android Developer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.15.1/devicon.min.css">
-    <script src="https://unpkg.com/feather-icons"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍💻</text></svg>">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body class="relative">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app-check.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, writeBatch, getDoc, increment, where } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black">
-        <div class="loading-logo">
-            <span class="loading-r">R</span><span class="loading-dot">.</span>
-        </div>
-        <div class="loading-bar-container">
-            <div class="loading-bar-fill" id="loading-bar"></div>
-        </div>
-        <p class="loading-text font-mono text-xs mt-2 tracking-widest">INITIALIZING...</p>
-    </div>
+const firebaseConfig = {
+    apiKey: "AIzaSyC9c5yk7Smmjk3PRJgJm24PmXJfr0XpBlc",
+    authDomain: "robert-portfolio-98d71.firebaseapp.com",
+    projectId: "robert-portfolio-98d71",
+    storageBucket: "robert-portfolio-98d71.firebasestorage.app",
+    messagingSenderId: "125447409289",
+    appId: "1:125447409289:web:010585084cc2a0fe8ec058",
+    measurementId: "G-FS62VLHDGH"
+};
 
-    <!-- Scroll Progress Bar -->
-    <div id="scroll-progress" class="fixed top-0 left-0 h-[3px] z-[100] transition-all duration-100" style="width:0%;background:linear-gradient(90deg,#00f15e,#00c74d)"></div>
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    <!-- Back to Top Button -->
-    <button id="back-to-top" class="fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 shadow-lg" aria-label="Back to top">
-        <i data-feather="arrow-up" class="w-5 h-5"></i>
-    </button>
+const appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider('6LcsLsArAAAAAIKuIslOZOQSSr7HSlZZD2qVHWhD'),
+    isTokenAutoRefreshEnabled: true
+});
 
-    <!-- Toast Container -->
-    <div id="toast-container" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-3 items-center"></div>
+// =====================================================
+//  TOAST NOTIFICATION SYSTEM
+// =====================================================
+function showToast(message, type = 'success', duration = 3500) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    const icons = { success: '✓', error: '✕', info: 'ℹ' };
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<span style="font-size:1rem">${icons[type]}</span> ${message}`;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.animation = 'slideUp 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
 
-    <!-- Custom Cursors -->
-    <div class="cursor-dot" style="opacity: 0;"></div>
-    <div class="cursor-outline" style="opacity: 0;"></div>
+// =====================================================
+//  LOADING SCREEN
+// =====================================================
+function initLoadingScreen() {
+    const screen = document.getElementById('loading-screen');
+    const bar = document.getElementById('loading-bar');
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 15 + 5;
+        if (progress >= 100) { progress = 100; clearInterval(interval); }
+        bar.style.width = progress + '%';
+    }, 120);
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            bar.style.width = '100%';
+            setTimeout(() => screen.classList.add('fade-out'), 300);
+        }, 500);
+    });
+    setTimeout(() => screen.classList.add('fade-out'), 3000);
+}
 
-    <!-- Background Layers -->
-    <div id="code-background" class="fixed top-0 left-0 w-full h-full z-[-1] pointer-events-none overflow-hidden"></div>
-    <div id="bg-layer-1" class="absolute top-0 left-0 z-[-2] h-full w-full transition-opacity duration-500"></div>
-    <div id="bg-layer-2" class="fixed top-0 left-0 z-[-2] h-full w-full transition-opacity duration-500"></div>
+// =====================================================
+//  SCROLL PROGRESS BAR
+// =====================================================
+function initScrollProgress() {
+    const bar = document.getElementById('scroll-progress');
+    const backToTop = document.getElementById('back-to-top');
+    window.addEventListener('scroll', () => {
+        const scrolled = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+        bar.style.width = scrolled + '%';
+        if (window.scrollY > 400) {
+            backToTop.classList.add('visible');
+        } else {
+            backToTop.classList.remove('visible');
+        }
+    }, { passive: true });
+    backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+}
 
-    <!-- NAVBAR -->
-    <nav id="navbar" class="fixed w-full z-30 top-0 transition-colors duration-500">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="#" id="nav-logo" class="text-xl font-black tracking-wider transition-colors duration-500" style="font-family:'Orbitron',sans-serif">
-                Robert<span id="nav-logo-accent">.</span>Romany
-            </a>
-            <div class="hidden md:flex items-center space-x-6">
-                <a href="#hero" class="nav-link transition-colors duration-500 text-sm font-medium">Home</a>
-                <a href="#about" class="nav-link transition-colors duration-500 text-sm font-medium">About</a>
-                <a href="#timeline" class="nav-link transition-colors duration-500 text-sm font-medium">Journey</a>
-                <a href="#skills" class="nav-link transition-colors duration-500 text-sm font-medium">Skills</a>
-                <a href="#projects" class="nav-link transition-colors duration-500 text-sm font-medium">Projects</a>
-                <a href="#testimonials" class="nav-link transition-colors duration-500 text-sm font-medium">Feedback</a>
-                <a href="#contact" class="nav-link transition-colors duration-500 text-sm font-medium">Contact</a>
-            </div>
-            <div class="flex items-center space-x-3">
-                <div id="theme-switcher" class="flex items-center space-x-1">
-                    <button class="theme-btn p-2 rounded-lg" data-theme="dark" title="Dark Mode"><i data-feather="moon" class="w-4 h-4"></i></button>
-                    <button class="theme-btn p-2 rounded-lg" data-theme="light" title="Light Mode"><i data-feather="sun" class="w-4 h-4"></i></button>
-                </div>
-                <button id="login-btn" class="nav-link text-sm transition-colors duration-500">Admin</button>
-                <button id="logout-btn" class="hidden text-red-400 hover:text-red-500 text-sm transition">Logout</button>
-                <!-- Mobile Menu Button -->
-                <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg nav-link">
-                    <i data-feather="menu" class="w-5 h-5" id="menu-icon"></i>
-                </button>
-            </div>
-        </div>
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4 space-y-2 border-t border-gray-800">
-            <a href="#hero" class="mobile-nav-link block py-2 text-sm font-medium">Home</a>
-            <a href="#about" class="mobile-nav-link block py-2 text-sm font-medium">About</a>
-            <a href="#timeline" class="mobile-nav-link block py-2 text-sm font-medium">Journey</a>
-            <a href="#skills" class="mobile-nav-link block py-2 text-sm font-medium">Skills</a>
-            <a href="#projects" class="mobile-nav-link block py-2 text-sm font-medium">Projects</a>
-            <a href="#testimonials" class="mobile-nav-link block py-2 text-sm font-medium">Feedback</a>
-            <a href="#contact" class="mobile-nav-link block py-2 text-sm font-medium">Contact</a>
-        </div>
-    </nav>
+// =====================================================
+//  MOBILE MENU
+// =====================================================
+function initMobileMenu() {
+    const btn = document.getElementById('mobile-menu-btn');
+    const menu = document.getElementById('mobile-menu');
+    let isOpen = false;
+    btn.addEventListener('click', () => {
+        isOpen = !isOpen;
+        menu.classList.toggle('hidden', !isOpen);
+        const icon = document.getElementById('menu-icon');
+        icon.setAttribute('data-feather', isOpen ? 'x' : 'menu');
+        feather.replace();
+    });
+    document.querySelectorAll('.mobile-nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            isOpen = false;
+            menu.classList.add('hidden');
+            document.getElementById('menu-icon').setAttribute('data-feather', 'menu');
+            feather.replace();
+        });
+    });
+}
 
-    <div class="container mx-auto px-6">
+// =====================================================
+//  TYPEWRITER EFFECT
+// =====================================================
+function initTypewriter() {
+    const el = document.getElementById('typewriter');
+    if (!el) return;
+    const texts = [
+        'Android Apps 📱',
+        'Kotlin Solutions 🛠️',
+        'Jetpack Compose UI ✨',
+        'Clean Architecture 🏗️',
+        'Scalable Apps 🚀',
+    ];
+    let i = 0, j = 0, isDeleting = false;
+    function type() {
+        const current = texts[i];
+        el.textContent = isDeleting ? current.substring(0, j--) : current.substring(0, j++);
+        let delay = isDeleting ? 50 : 80;
+        if (!isDeleting && j === current.length + 1) { delay = 1800; isDeleting = true; }
+        else if (isDeleting && j < 0) { isDeleting = false; j = 0; i = (i + 1) % texts.length; delay = 300; }
+        setTimeout(type, delay);
+    }
+    type();
+}
 
-        <!-- HERO SECTION -->
-        <section id="hero" class="h-screen flex items-center pt-16">
-            <div class="text-center md:text-left w-full">
-                <!-- Visitor Badge -->
-                <div class="flex justify-center md:justify-start mb-6">
-                    <div id="visitor-badge" class="visitor-badge inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-mono font-semibold">
-                        <span class="w-2 h-2 rounded-full bg-[#00f15e] animate-pulse"></span>
-                        <span id="visitor-count-display">— visitors</span>
-                    </div>
-                </div>
+// =====================================================
+//  ANIMATED STATS COUNTERS
+// =====================================================
+function animateCounter(el, target, duration = 1500) {
+    const start = 0;
+    const startTime = performance.now();
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(start + (target - start) * eased);
+        if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+}
 
-                <div class="editable-container">
-                    <p class="hero-greeting text-sm font-mono mb-2 tracking-widest" id="hero-greeting">👋 HELLO, WORLD! I'M</p>
-                    <h1 id="hero-title" class="text-5xl md:text-7xl font-black leading-tight transition-colors duration-500" style="font-family:'Orbitron',sans-serif">
-                        <span id="hero-name" class="transition-colors duration-500">Robert<br>Romany</span>
-                    </h1>
-                    <button id="edit-hero-title-btn" class="edit-icon"><i data-feather="edit-2" class="w-5 h-5"></i></button>
-                </div>
+function initStatsCounters() {
+    const statsSection = document.getElementById('stats');
+    if (!statsSection) return;
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                document.querySelectorAll('.stat-number[data-target]').forEach(el => {
+                    const target = parseInt(el.dataset.target);
+                    animateCounter(el, target);
+                });
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.3 });
+    observer.observe(statsSection);
+}
 
-                <div class="editable-container mt-6">
-                    <div class="flex items-center gap-3 justify-center md:justify-start">
-                        <span class="text-lg md:text-xl font-semibold text-gray-400">I build</span>
-                        <span id="typewriter" class="text-lg md:text-xl font-bold typewriter-text"></span>
-                        <span class="typewriter-cursor text-[#00f15e] text-2xl font-thin animate-pulse">|</span>
-                    </div>
-                    <p id="hero-subtitle" class="text-base md:text-lg max-w-2xl mx-auto md:mx-0 mt-4 transition-colors duration-500 text-gray-400">
-                        An Android Software Engineer crafting modern, high-performance, and user-centric mobile applications with Kotlin &amp; Jetpack Compose.
-                    </p>
-                    <button id="edit-hero-subtitle-btn" class="edit-icon"><i data-feather="edit-2" class="w-5 h-5"></i></button>
-                </div>
+// =====================================================
+//  VISITOR COUNTER
+// =====================================================
+async function initVisitorCounter() {
+    const display = document.getElementById('visitor-count-display');
+    try {
+        const counterRef = doc(db, 'siteStats', 'visitors');
+        const snap = await getDoc(counterRef);
+        let count = snap.exists() ? (snap.data().count || 0) : 0;
 
-                <div id="hero-socials" class="mt-10 flex items-center justify-center md:justify-start gap-4">
-                    <a href="https://www.linkedin.com/in/robert-romany-dev/" target="_blank" class="social-btn" aria-label="LinkedIn">
-                        <i data-feather="linkedin" class="w-5 h-5"></i>
-                    </a>
-                    <a href="https://github.com/Robert-x1" target="_blank" class="social-btn" aria-label="GitHub">
-                        <i data-feather="github" class="w-5 h-5"></i>
-                    </a>
-                    <a href="https://web.facebook.com/RobertRomanySoftwareEngineer" target="_blank" class="social-btn" aria-label="Facebook">
-                        <i data-feather="facebook" class="w-5 h-5"></i>
-                    </a>
-                    <a href="https://drive.google.com/file/d/1n2hG5sEccsvmQ8lGFIOWe4UccxXXXFj8/view?usp=sharing" target="_blank" class="cv-btn ml-2">
-                        <i data-feather="download" class="w-4 h-4"></i>
-                        <span>Download CV</span>
-                    </a>
-                </div>
+        // Only count once per session
+        if (!sessionStorage.getItem('hasVisited')) {
+            sessionStorage.setItem('hasVisited', 'true');
+            await setDoc(counterRef, { count: increment(1) }, { merge: true });
+            count++;
+        }
 
-                <div class="mt-10 flex justify-center md:justify-start">
-                    <a href="#about" class="scroll-down-btn">
-                        <span class="text-xs font-mono tracking-widest">SCROLL DOWN</span>
-                        <i data-feather="chevron-down" class="w-4 h-4 animate-bounce mt-1"></i>
-                    </a>
-                </div>
-            </div>
-        </section>
+        // Animate the counter display
+        if (display) {
+            let shown = 0;
+            const duration = 1200;
+            const startTime = performance.now();
+            function update(t) {
+                const p = Math.min((t - startTime) / duration, 1);
+                shown = Math.round(count * (1 - Math.pow(1 - p, 3)));
+                display.textContent = shown.toLocaleString() + ' visitors';
+                if (p < 1) requestAnimationFrame(update);
+            }
+            requestAnimationFrame(update);
+        }
+    } catch (e) {
+        if (display) display.textContent = '—';
+    }
+}
 
-        <!-- STATS SECTION -->
-        <section id="stats" class="py-16 animate-on-scroll">
-            <div class="flex justify-end mb-4">
-                <button id="edit-stats-btn" class="hidden text-xs font-mono py-1 px-3 rounded-lg transition"><i data-feather="edit-2" class="w-3 h-3 inline mr-1"></i>Edit Stats</button>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-                <div class="stat-card text-center">
-                    <div class="stat-number" id="stat-years" data-target="2">0</div>
-                    <div class="stat-suffix">+ Years</div>
-                    <div class="stat-label" id="stat-label-years">Experience</div>
-                </div>
-                <div class="stat-card text-center">
-                    <div class="stat-number" id="stat-apps" data-target="15">0</div>
-                    <div class="stat-suffix">+ Apps</div>
-                    <div class="stat-label" id="stat-label-apps">Built & Deployed</div>
-                </div>
-                <div class="stat-card text-center">
-                    <div class="stat-number" id="stat-clients" data-target="10">0</div>
-                    <div class="stat-suffix">+ Clients</div>
-                    <div class="stat-label" id="stat-label-clients">Satisfied</div>
-                </div>
-                <div class="stat-card text-center">
-                    <div class="stat-number"><span id="stat-lines">∞</span></div>
-                    <div class="stat-suffix">Lines</div>
-                    <div class="stat-label">of Code</div>
-                </div>
-            </div>
-        </section>
+// =====================================================
+//  TESTIMONIALS
+// =====================================================
+async function loadTestimonials() {
+    const grid = document.getElementById('testimonials-grid');
+    const loader = document.getElementById('testimonials-loader');
 
-        <!-- ABOUT SECTION -->
-        <section id="about" class="py-16 animate-on-scroll">
-            <div class="flex flex-col md:flex-row items-center justify-center gap-10 md:gap-16">
-                <div class="md:w-1/3 flex-shrink-0 relative editable-container">
-                    <div class="about-image-wrapper">
-                        <img id="about-image" src="https://placehold.co/400x400/0f172a/22d3ee?text=RR" alt="Robert Romany" class="about-img rounded-2xl w-72 h-72 md:w-80 md:h-80 aspect-square object-cover mx-auto transition-all duration-500">
-                        <div class="about-image-glow"></div>
-                    </div>
-                    <button id="edit-about-btn" class="edit-icon"><i data-feather="edit-2" class="w-5 h-5"></i></button>
-                </div>
-                <div class="md:w-2/3 text-center md:text-left">
-                    <p class="section-label">WHO I AM</p>
-                    <h2 id="about-title" class="section-heading transition-colors duration-500">About Me</h2>
-                    <div id="about-underline" class="section-title-underline mb-6 mx-auto md:mx-0"></div>
-                    <p id="about-text" class="leading-relaxed transition-colors duration-500 text-base">
-                        Highly motivated Android Developer with hands-on experience in building modern, efficient mobile applications using Kotlin and Jetpack Compose. Skilled in Clean Architecture, MVVM, Dagger Hilt, Room, and Retrofit, with a strong focus on app lifecycle management and UI/UX details. Proven track record in delivering complex projects. Experienced in technical leadership as an IEEE Vice Head and adept at utilizing AI tools for enhanced productivity.
-                    </p>
-                    <div class="mt-8 flex gap-4 justify-center md:justify-start flex-wrap">
-                        <a href="https://drive.google.com/file/d/1n2hG5sEccsvmQ8lGFIOWe4UccxXXXFj8/view?usp=sharing" target="_blank" class="cv-btn">
-                            <i data-feather="download" class="w-4 h-4"></i>
-                            <span>Download CV</span>
-                        </a>
-                        <a href="#contact" class="outline-btn">
-                            <i data-feather="mail" class="w-4 h-4"></i>
-                            <span>Hire Me</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
+    try {
+        const q = query(collection(db, 'testimonials'), where('status', '==', 'approved'), orderBy('timestamp', 'desc'));
+        const snap = await getDocs(q);
 
-        <!-- EXPERIENCE TIMELINE SECTION -->
-        <section id="timeline" class="py-16 animate-on-scroll">
-            <div class="text-center mb-12">
-                <p class="section-label">MY JOURNEY</p>
-                <div class="flex justify-center items-center gap-4">
-                    <h2 id="timeline-title" class="section-heading transition-colors duration-500">Experience & Education</h2>
-                    <button id="add-timeline-btn" class="hidden font-bold p-2 rounded-full transition"><i data-feather="plus"></i></button>
-                </div>
-                <div id="timeline-underline" class="section-title-underline mt-4 mx-auto"></div>
-            </div>
-            <div class="relative max-w-3xl mx-auto" id="timeline-container">
-                <div class="timeline-line"></div>
-                <!-- Timeline items loaded from Firestore or static -->
-                <div class="timeline-item timeline-left animate-on-scroll">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-card">
-                        <div class="timeline-date">2023 – Present</div>
-                        <h3 class="timeline-role">Android Developer</h3>
-                        <p class="timeline-company"><i data-feather="briefcase" class="w-3 h-3 inline mr-1"></i> Freelance</p>
-                        <p class="timeline-desc">Building production-ready Android applications using Kotlin, Jetpack Compose and Clean Architecture for various clients.</p>
-                        <div class="timeline-tags">
-                            <span>Kotlin</span><span>Jetpack Compose</span><span>MVVM</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="timeline-item timeline-right animate-on-scroll">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-card">
-                        <div class="timeline-date">2022 – 2023</div>
-                        <h3 class="timeline-role">IEEE Vice Head</h3>
-                        <p class="timeline-company"><i data-feather="users" class="w-3 h-3 inline mr-1"></i> IEEE Student Branch</p>
-                        <p class="timeline-desc">Technical leadership role overseeing workshops, events, and mentoring junior developers in mobile app development.</p>
-                        <div class="timeline-tags">
-                            <span>Leadership</span><span>Mentoring</span><span>Android</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="timeline-item timeline-left animate-on-scroll">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-card">
-                        <div class="timeline-date">2020 – 2024</div>
-                        <h3 class="timeline-role">B.Sc. Computer Science</h3>
-                        <p class="timeline-company"><i data-feather="book" class="w-3 h-3 inline mr-1"></i> University</p>
-                        <p class="timeline-desc">Focused on software engineering, algorithms, data structures, and mobile application development.</p>
-                        <div class="timeline-tags">
-                            <span>CS</span><span>Software Engineering</span><span>Algorithms</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+        if (loader) loader.remove();
+        grid.innerHTML = '';
 
-        <!-- PRINCIPLES SECTION -->
-        <section id="principles" class="py-16 animate-on-scroll">
-            <div class="text-center mb-12">
-                <p class="section-label">HOW I WORK</p>
-                <div class="flex justify-center items-center gap-4">
-                    <h2 id="principles-title" class="section-heading transition-colors duration-500">Core Principles</h2>
-                    <button id="add-principle-btn" class="hidden font-bold p-2 rounded-full transition"><i data-feather="plus"></i></button>
-                </div>
-                <div id="principles-underline" class="section-title-underline mt-4 mx-auto"></div>
-            </div>
-            <div id="principles-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                <div id="principles-loader" class="loader col-span-3"></div>
-            </div>
-        </section>
+        if (snap.empty) {
+            grid.innerHTML = '<p class="col-span-3 text-center text-gray-500 font-mono text-sm py-12">No reviews yet. Be the first! 🌟</p>';
+            return;
+        }
 
-        <!-- SKILLS SECTION -->
-        <section id="skills" class="py-16 animate-on-scroll">
-            <div class="text-center mb-12">
-                <p class="section-label">WHAT I USE</p>
-                <div class="flex justify-center items-center gap-4">
-                    <h2 id="skills-title" class="section-heading transition-colors duration-500">Technical Skills</h2>
-                    <button id="add-skill-btn" class="hidden font-bold p-2 rounded-full transition"><i data-feather="plus"></i></button>
-                </div>
-                <div id="skills-underline" class="section-title-underline mt-4 mx-auto"></div>
-            </div>
-            <div id="skills-container" class="max-w-4xl mx-auto flex flex-wrap justify-center items-center gap-x-10 gap-y-8">
-                <div id="skills-loader" class="loader"></div>
-            </div>
-        </section>
-
-        <!-- PROJECTS SECTION -->
-        <section id="projects" class="py-16 animate-on-scroll">
-            <div class="flex justify-between items-end mb-10">
-                <div>
-                    <p class="section-label">WHAT I BUILT</p>
-                    <h2 id="projects-title" class="section-heading transition-colors duration-500">Projects</h2>
-                    <div class="section-title-underline mt-2" id="projects-underline-line"></div>
-                </div>
-                <button id="add-project-btn" class="hidden font-bold py-2 px-4 rounded-lg transition text-sm">
-                    + Add Project
-                </button>
-            </div>
-            <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div id="projects-loader" class="loader"></div>
-            </div>
-        </section>
-
-        <!-- TESTIMONIALS SECTION -->
-        <section id="testimonials" class="py-16 animate-on-scroll">
-            <div class="text-center mb-12">
-                <p class="section-label">WHAT PEOPLE SAY</p>
-                <h2 class="section-heading transition-colors duration-500">Feedback & Reviews</h2>
-                <div class="section-title-underline mt-4 mx-auto"></div>
-            </div>
-            <div id="testimonials-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mb-10">
-                <div id="testimonials-loader" class="loader col-span-3"></div>
-            </div>
-            <div class="text-center">
-                <button id="leave-feedback-btn" class="cv-btn">
-                    <i data-feather="message-square" class="w-4 h-4"></i>
-                    <span>Leave a Review</span>
-                </button>
-            </div>
-        </section>
-
-        <!-- CONTACT SECTION -->
-        <section id="contact" class="py-16 text-center animate-on-scroll">
-            <p class="section-label">LET'S TALK</p>
-            <h2 id="contact-title" class="section-heading mb-2 transition-colors duration-500">Get In Touch</h2>
-            <div id="contact-underline" class="section-title-underline mt-4 mb-8 mx-auto"></div>
-            <p id="contact-text" class="text-lg max-w-2xl mx-auto mb-10 transition-colors duration-500 text-gray-400">
-                I'm always excited to discuss new projects or opportunities. Feel free to reach out!
-            </p>
-            <div class="flex flex-col items-center justify-center space-y-4">
-                <div id="email-container" class="flex flex-col md:flex-row items-center justify-center rounded-2xl p-4 transition-colors duration-500 gap-3">
-                    <span id="email-text" class="text-base md:text-lg font-mono transition-colors duration-500 break-all"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6614090403141214090b07081f4802031026010b070f0a4805090b">[email&#160;protected]</a></span>
-                    <button id="copy-email-btn" class="w-full justify-center md:w-auto p-3 rounded-xl flex items-center font-semibold transition-colors duration-500">
-                        <i data-feather="copy" class="w-5 h-5"></i>
-                        <span id="copy-btn-text" class="ml-2">Copy</span>
-                    </button>
-                </div>
-                <p id="copy-success-msg" class="text-green-400 h-5 -mt-2 transition-opacity opacity-0">Copied to clipboard!</p>
-                <a id="mailto-btn" href="/cdn-cgi/l/email-protection#40322f22253234322f2d212e396e24253600272d21292c6e232f2d" class="font-bold py-3 px-8 rounded-xl transition text-lg flex items-center space-x-2">
-                    <i data-feather="mail" class="w-5 h-5"></i>
-                    <span>Email Me Directly</span>
-                </a>
-            </div>
-        </section>
-    </div>
-
-    <!-- FOOTER -->
-    <footer id="footer" class="border-t mt-16 transition-colors duration-500">
-        <div class="container mx-auto px-6 py-8">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <p class="font-bold text-lg tracking-wider" style="font-family:'Orbitron',sans-serif">Robert<span class="text-[#00f15e]">.</span>Romany</p>
-                <p class="text-sm">&copy; <span id="year"></span> Designed &amp; Built by Robert Romany Elshahat.</p>
-                <div class="flex gap-4">
-                    <a href="https://www.linkedin.com/in/robert-romany-dev/" target="_blank" class="footer-icon"><i data-feather="linkedin" class="w-4 h-4"></i></a>
-                    <a href="https://github.com/Robert-x1" target="_blank" class="footer-icon"><i data-feather="github" class="w-4 h-4"></i></a>
-                    <a href="https://web.facebook.com/RobertRomanySoftwareEngineer" target="_blank" class="footer-icon"><i data-feather="facebook" class="w-4 h-4"></i></a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- ========== MODALS ========== -->
-
-    <!-- Admin Login Modal -->
-    <div id="login-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center">
-        <div class="modal-content p-8 rounded-2xl shadow-xl w-full max-w-sm transform scale-95">
-            <h3 class="text-2xl font-bold mb-2" style="font-family:'Orbitron',sans-serif">Admin Login</h3>
-            <p class="text-xs text-gray-400 mb-6 font-mono">AUTHORIZED ACCESS ONLY</p>
-            <form id="login-form">
-                <input type="email" id="email" placeholder="Email" class="modal-input w-full p-3 rounded-xl mb-4 focus:outline-none focus:ring-2" required>
-                <input type="password" id="password" placeholder="Password" class="modal-input w-full p-3 rounded-xl mb-4 focus:outline-none focus:ring-2" required>
-                <button type="submit" id="login-submit-btn" class="w-full text-black font-bold py-3 px-4 rounded-xl transition">Login</button>
-                <p id="login-error" class="text-red-400 text-sm mt-2 text-center"></p>
-            </form>
-        </div>
-    </div>
-
-    <!-- Project Add/Edit Modal -->
-    <div id="project-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
-        <div class="modal-content p-8 rounded-2xl shadow-xl w-full max-w-3xl transform scale-95 max-h-screen overflow-y-auto">
-            <h3 id="project-modal-title" class="text-2xl font-bold mb-6">Add New Project</h3>
-            <form id="project-form">
-                <input type="hidden" id="project-id">
-                <div class="grid grid-cols-1 gap-6">
-                    <input type="text" id="project-title" placeholder="Project Title" class="modal-input p-3 rounded-xl" required>
-                    <textarea id="project-description" placeholder="Project Description" class="modal-input p-3 rounded-xl h-32" required></textarea>
-                    <input type="url" id="project-thumbnail-url" placeholder="Thumbnail Image URL" class="modal-input p-3 rounded-xl" required>
+        snap.forEach(docSnap => {
+            const t = docSnap.data();
+            const stars = '★'.repeat(t.rating || 5) + '☆'.repeat(5 - (t.rating || 5));
+            const initials = (t.name || 'A').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+            const card = document.createElement('div');
+            card.className = 'testimonial-card animate-on-scroll';
+            card.innerHTML = `
+                <div class="testimonial-stars">${stars}</div>
+                <p class="testimonial-message">${escapeHtml(t.message)}</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">${initials}</div>
                     <div>
-                        <label class="block text-sm font-medium mb-2">Additional Images</label>
-                        <div id="additional-images-container" class="space-y-4"></div>
-                        <button type="button" id="add-image-btn" class="mt-4 font-semibold py-2 px-4 rounded-xl text-sm">Add Image</button>
+                        <p class="testimonial-name">${escapeHtml(t.name)}</p>
+                        <p class="testimonial-role">${escapeHtml(t.role || '')}</p>
                     </div>
-                    <input type="text" id="project-tech" placeholder="Technologies (comma separated)" class="modal-input p-3 rounded-xl" required>
-                    <input type="url" id="project-source-link" placeholder="Source Code URL" class="modal-input p-3 rounded-xl">
-                    <input type="url" id="project-live-link" placeholder="Live/Google Play URL" class="modal-input p-3 rounded-xl">
-                </div>
-                <div class="flex justify-end space-x-4 mt-6">
-                    <button type="button" class="modal-close bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">Cancel</button>
-                    <button type="submit" id="project-submit-btn" class="text-black font-bold py-2 px-4 rounded-xl flex items-center">
-                        <span id="project-submit-text">Save Project</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+                    ${isAdmin ? `<div class="ml-auto flex gap-2">
+                        <button class="delete-btn admin-btn" onclick="handleDeleteTestimonial('${docSnap.id}')">Delete</button>
+                    </div>` : ''}
+                </div>`;
+            grid.appendChild(card);
+        });
 
-    <!-- Project Detail Modal -->
-    <div id="project-detail-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
-        <div class="modal-content p-8 rounded-2xl shadow-xl w-full max-w-4xl transform scale-95 max-h-screen flex flex-col">
-            <div class="flex-shrink-0 flex justify-between items-start mb-4">
-                <h3 id="detail-title" class="text-3xl font-bold"></h3>
-                <button class="modal-close text-3xl leading-none">&times;</button>
-            </div>
-            <div class="flex-grow overflow-y-auto pr-4 -mr-4">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        // Re-observe new elements
+        document.querySelectorAll('.animate-on-scroll:not(.is-visible)').forEach(el => scrollObserver.observe(el));
+        feather.replace();
+
+    } catch (e) {
+        if (loader) loader.remove();
+        grid.innerHTML = '<p class="col-span-3 text-center text-gray-400 py-8">Unable to load reviews.</p>';
+    }
+}
+
+async function submitTestimonial(name, role, message, rating) {
+    await addDoc(collection(db, 'testimonials'), {
+        name, role, message, rating,
+        status: 'pending',
+        timestamp: serverTimestamp()
+    });
+}
+
+async function loadPendingTestimonials() {
+    const list = document.getElementById('pending-testimonials-list');
+    list.innerHTML = '<div class="loader mx-auto"></div>';
+    try {
+        const q = query(collection(db, 'testimonials'), where('status', '==', 'pending'), orderBy('timestamp', 'desc'));
+        const snap = await getDocs(q);
+        list.innerHTML = '';
+        if (snap.empty) {
+            list.innerHTML = '<p class="text-center text-gray-400 py-8 font-mono text-sm">No pending reviews 🎉</p>';
+            return;
+        }
+        snap.forEach(docSnap => {
+            const t = docSnap.data();
+            const stars = '★'.repeat(t.rating || 5);
+            const card = document.createElement('div');
+            card.className = 'pending-t-card';
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
                     <div>
-                        <img id="detail-main-image" src="" alt="Main project image" class="w-full h-auto rounded-xl mb-4 bg-gray-700">
-                        <p id="detail-image-description" class="text-sm italic text-center h-5 mb-2"></p>
-                        <div id="detail-thumbnails" class="flex space-x-2 overflow-x-auto p-1"></div>
+                        <p class="font-bold text-sm">${escapeHtml(t.name)} <span class="font-normal text-gray-400">— ${escapeHtml(t.role || '')}</span></p>
+                        <p class="text-yellow-400 text-xs">${stars}</p>
                     </div>
-                    <div>
-                        <p id="detail-description" class="mb-6 leading-relaxed"></p>
-                        <h4 class="font-bold mb-2">Technologies Used:</h4>
-                        <div id="detail-tech" class="flex flex-wrap gap-2 mb-6"></div>
-                        <h4 class="font-bold mb-2">Links:</h4>
-                        <div id="detail-links" class="flex space-x-4"></div>
+                    <div class="flex gap-2">
+                        <button class="edit-btn admin-btn" onclick="handleApproveTestimonial('${docSnap.id}', this)">Approve</button>
+                        <button class="delete-btn admin-btn" onclick="handleDeleteTestimonial('${docSnap.id}', true)">Reject</button>
                     </div>
                 </div>
+                <p class="text-sm text-gray-300">${escapeHtml(t.message)}</p>`;
+            list.appendChild(card);
+        });
+    } catch (e) {
+        list.innerHTML = '<p class="text-center text-red-400">Error loading reviews.</p>';
+    }
+}
+
+window.handleApproveTestimonial = async (id, btn) => {
+    btn.textContent = '...';
+    await updateDoc(doc(db, 'testimonials', id), { status: 'approved' });
+    btn.closest('.pending-t-card').remove();
+    showToast('Review approved!', 'success');
+    loadTestimonials();
+};
+
+window.handleDeleteTestimonial = async (id, isPending = false) => {
+    if (!confirm('Delete this review?')) return;
+    await deleteDoc(doc(db, 'testimonials', id));
+    showToast('Review deleted.', 'info');
+    if (isPending) loadPendingTestimonials();
+    else loadTestimonials();
+};
+
+function escapeHtml(text) {
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// =====================================================
+//  STAR RATING WIDGET
+// =====================================================
+function initStarRating() {
+    const stars = document.querySelectorAll('#star-rating .star');
+    const ratingInput = document.getElementById('t-rating');
+    stars.forEach(star => {
+        star.addEventListener('mouseover', () => {
+            const val = parseInt(star.dataset.val);
+            stars.forEach((s, i) => s.classList.toggle('filled', i < val));
+        });
+        star.addEventListener('mouseout', () => {
+            const current = parseInt(ratingInput.value) || 0;
+            stars.forEach((s, i) => s.classList.toggle('filled', i < current));
+        });
+        star.addEventListener('click', () => {
+            const val = parseInt(star.dataset.val);
+            ratingInput.value = val;
+            stars.forEach((s, i) => s.classList.toggle('filled', i < val));
+        });
+    });
+}
+
+// =====================================================
+//  THEMES
+// =====================================================
+let isAdmin = false;
+let projects = [];
+let scrollObserver;
+
+const themes = {
+    dark: {
+        cursorColor: '#00f15e',
+        body: 'bg-black text-gray-200 theme-dark',
+        bgLayer1: 'bg-black bg-[radial-gradient(#e5e7eb0f_1px,transparent_1px)] [background-size:16px_16px]',
+        bgLayer1Fade: 'opacity-100',
+        bgLayer2: 'bg-[radial-gradient(circle_500px_at_50%_200px,rgba(0,241,94,0.12),transparent)]',
+        bgLayer2Fade: 'opacity-100',
+        navbar: 'bg-black/80 backdrop-blur-sm border-b border-gray-900',
+        navLogo: 'text-white',
+        navLink: 'text-gray-300 hover:text-[#00f15e]',
+        heroTitle: 'text-white',
+        heroName: 'text-white',
+        heroSubtitle: 'text-gray-400',
+        sectionTitle: 'text-white', sectionText: 'text-gray-400',
+        underline: 'bg-[#00f15e]',
+        aboutImage: 'ring-[#00f15e]/20',
+        principleCard: 'bg-gray-900/80 border border-gray-800 hover:border-[#00f15e]/30',
+        principleIcon: 'text-[#00f15e]',
+        skillsContainer: 'text-gray-300',
+        projectCard: 'bg-gray-900/80 border border-gray-800 hover:border-[#00f15e]/30',
+        addBtn: 'bg-[#00f15e]/10 hover:bg-[#00f15e]/20 text-[#00f15e] border border-[#00f15e]/20',
+        emailContainer: 'bg-gray-900/80 border border-gray-800',
+        emailText: 'text-gray-300',
+        copyBtn: 'bg-gray-800 hover:bg-gray-700 text-gray-300',
+        mailtoBtn: 'bg-[#00f15e] hover:bg-[#00c74d] text-gray-900',
+        footer: 'bg-black border-gray-900 text-gray-500',
+        modalContent: 'bg-[#0a0a0a] border border-gray-800 text-white',
+        modalInput: 'bg-gray-900 border border-gray-700 text-white focus:ring-[#00f15e] placeholder:text-gray-600',
+        modalSubmit: 'bg-[#00f15e] hover:bg-[#00c74d] text-black',
+        modalClose: 'text-gray-400 hover:text-white',
+        detailLinkSource: 'bg-gray-800 hover:bg-gray-700 text-white',
+        detailLinkLive: 'bg-[#00f15e] hover:bg-[#00c74d] text-gray-900',
+        activeThumb: 'border-[#00f15e]',
+        mobileMenu: 'bg-black/95 backdrop-blur-sm border-b border-gray-900',
+        navLogoAccent: '#00f15e',
+    },
+    light: {
+        cursorColor: '#2563eb',
+        body: 'bg-slate-50 text-slate-800 theme-light',
+        bgLayer1: 'bg-slate-50',
+        bgLayer1Fade: 'opacity-100',
+        bgLayer2: 'bg-[radial-gradient(circle_800px_at_50%_200px,rgba(37,99,235,0.07),transparent)]',
+        bgLayer2Fade: 'opacity-100',
+        navbar: 'bg-white/90 backdrop-blur-md border-b border-slate-100',
+        navLogo: 'text-slate-900',
+        navLink: 'text-slate-600 hover:text-blue-600',
+        heroTitle: 'text-slate-900',
+        heroName: 'text-slate-900',
+        heroSubtitle: 'text-slate-500',
+        sectionTitle: 'text-slate-900', sectionText: 'text-slate-600',
+        underline: 'bg-blue-600',
+        aboutImage: 'ring-blue-600/20',
+        principleCard: 'bg-white border border-slate-100 shadow-sm hover:border-blue-200 hover:shadow-md',
+        principleIcon: 'text-blue-600',
+        skillsContainer: 'text-slate-700',
+        projectCard: 'bg-white border border-slate-100 shadow-sm hover:border-blue-200 hover:shadow-md',
+        addBtn: 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-100',
+        emailContainer: 'bg-white border border-slate-200 shadow-sm',
+        emailText: 'text-slate-700',
+        copyBtn: 'bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600',
+        mailtoBtn: 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20',
+        footer: 'bg-white border-slate-100 text-slate-400',
+        modalContent: 'bg-white text-slate-800 shadow-2xl',
+        modalInput: 'bg-slate-50 border border-slate-200 text-slate-800 focus:ring-blue-500 placeholder:text-slate-400',
+        modalSubmit: 'bg-blue-600 hover:bg-blue-700 text-white',
+        modalClose: 'text-slate-400 hover:text-slate-800',
+        detailLinkSource: 'bg-slate-100 hover:bg-slate-200 text-slate-800',
+        detailLinkLive: 'bg-blue-600 hover:bg-blue-700 text-white',
+        activeThumb: 'border-blue-600',
+        mobileMenu: 'bg-white/95 backdrop-blur-sm border-b border-slate-100',
+        navLogoAccent: '#2563eb',
+    }
+};
+
+function applyTheme(themeName) {
+    const theme = themes[themeName];
+    if (!theme) return;
+    document.documentElement.style.setProperty('--cursor-color', theme.cursorColor);
+
+    document.body.className = '';
+    document.body.classList.add(...theme.body.split(' ').filter(Boolean));
+
+    const setClasses = (elements, classes) => {
+        if (!elements) return;
+        const list = elements.length !== undefined ? Array.from(elements) : [elements];
+        list.forEach(el => {
+            if (!el || typeof el.setAttribute !== 'function') return;
+            const preserved = (el.getAttribute('class') || '').split(' ').filter(c =>
+                c && !c.startsWith('bg-') && !c.startsWith('text-') && !c.startsWith('border-') &&
+                !c.startsWith('ring-') && !c.startsWith('shadow-') && !c.startsWith('hover:') &&
+                !c.startsWith('backdrop-') && !c.startsWith('placeholder:') && !c.startsWith('focus:') &&
+                !c.startsWith('opacity-') && !c.startsWith('theme-')
+            ).join(' ');
+            el.setAttribute('class', `${preserved} ${classes}`.trim());
+        });
+    };
+
+    setClasses(document.getElementById('bg-layer-1'), `${theme.bgLayer1} ${theme.bgLayer1Fade}`);
+    setClasses(document.getElementById('bg-layer-2'), `${theme.bgLayer2} ${theme.bgLayer2Fade}`);
+    setClasses(document.getElementById('navbar'), theme.navbar);
+    setClasses(document.getElementById('nav-logo'), `${theme.navLogo} text-xl font-black tracking-wider`);
+    setClasses(document.querySelectorAll('.nav-link'), theme.navLink);
+    setClasses(document.querySelectorAll('.mobile-nav-link'), theme.navLink);
+    setClasses(document.getElementById('hero-title'), theme.heroTitle);
+    setClasses(document.getElementById('hero-name'), theme.heroName);
+    setClasses(document.getElementById('hero-subtitle'), theme.heroSubtitle);
+    setClasses(document.getElementById('about-title'), theme.sectionTitle);
+    setClasses(document.getElementById('about-text'), theme.sectionText);
+    setClasses(document.getElementById('about-underline'), theme.underline);
+    setClasses(document.getElementById('about-image'), theme.aboutImage);
+    setClasses(document.getElementById('principles-title'), theme.sectionTitle);
+    setClasses(document.getElementById('principles-underline'), theme.underline);
+    setClasses(document.getElementById('skills-title'), theme.sectionTitle);
+    setClasses(document.getElementById('skills-underline'), theme.underline);
+    setClasses(document.getElementById('skills-container'), theme.skillsContainer);
+    setClasses(document.getElementById('projects-title'), theme.sectionTitle);
+    setClasses(document.getElementById('projects-underline-line'), theme.underline);
+    setClasses(document.getElementById('timeline-title'), theme.sectionTitle);
+    setClasses(document.getElementById('timeline-underline'), theme.underline);
+    setClasses(document.getElementById('contact-title'), theme.sectionTitle);
+    setClasses(document.getElementById('contact-text'), theme.sectionText);
+    setClasses(document.getElementById('contact-underline'), theme.underline);
+    setClasses(document.getElementById('email-container'), theme.emailContainer);
+    setClasses(document.getElementById('email-text'), theme.emailText);
+    setClasses(document.getElementById('copy-email-btn'), theme.copyBtn);
+    setClasses(document.getElementById('mailto-btn'), theme.mailtoBtn);
+    setClasses(document.getElementById('footer'), `${theme.footer} border-t`);
+    setClasses(document.getElementById('mobile-menu'), theme.mobileMenu);
+    setClasses([
+        document.getElementById('add-project-btn'),
+        document.getElementById('add-principle-btn'),
+        document.getElementById('add-skill-btn')
+    ].filter(Boolean), theme.addBtn);
+
+    document.querySelectorAll('.modal-content').forEach(el => setClasses(el, theme.modalContent));
+    document.querySelectorAll('.modal-input').forEach(el => setClasses(el, theme.modalInput));
+    document.querySelectorAll('.modal-close').forEach(el => setClasses(el, theme.modalClose));
+    [
+        'login-submit-btn', 'project-submit-btn', 'principle-submit-btn',
+        'skill-submit-btn', 'about-submit-btn', 'text-edit-submit-btn', 'testimonial-submit-btn'
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) setClasses(el, theme.modalSubmit);
+    });
+
+    // Logo accent color
+    const accent = document.getElementById('nav-logo-accent');
+    if (accent) accent.style.color = theme.navLogoAccent;
+
+    localStorage.setItem('portfolioTheme', themeName);
+    document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.theme === themeName));
+    renderAllContent();
+}
+
+// =====================================================
+//  FIREBASE DATA LOADING
+// =====================================================
+async function loadAllData() {
+    await Promise.all([
+        loadSiteSettings(),
+        loadPrinciples(),
+        loadSkills(),
+        loadProjects(),
+        loadTimeline(),
+        loadTestimonials(),
+        initVisitorCounter(),
+    ]);
+}
+
+// ── TIMELINE (fully editable) ─────────────────────
+async function loadTimeline() {
+    const cont = document.getElementById('timeline-container');
+    cont.innerHTML = '<div class="timeline-line"></div><div id="timeline-loader" class="loader mx-auto mt-8"></div>';
+    try {
+        let snap;
+        try { snap = await getDocs(query(collection(db, 'timeline'), orderBy('order'))); }
+        catch { snap = await getDocs(collection(db, 'timeline')); }
+        document.getElementById('timeline-loader')?.remove();
+        if (snap.empty) { renderStaticTimeline(cont); return; }
+        let idx = 0;
+        snap.forEach(d => { cont.appendChild(createTimelineCard({ id: d.id, ...d.data() }, idx % 2 === 0 ? 'timeline-left' : 'timeline-right')); idx++; });
+        feather.replace();
+        document.querySelectorAll('.animate-on-scroll:not(.is-visible)').forEach(e => scrollObserver && scrollObserver.observe(e));
+    } catch (e) { document.getElementById('timeline-loader')?.remove(); renderStaticTimeline(cont); }
+}
+
+function renderStaticTimeline(cont) {
+    const defaults = [
+        { id: 's1', year: '2023 – Present', role: 'Android Developer', company: 'Freelance', icon: 'briefcase', desc: 'Building production-ready Android apps using Kotlin, Jetpack Compose and Clean Architecture.', tags: ['Kotlin', 'Jetpack Compose', 'MVVM'] },
+        { id: 's2', year: '2022 – 2023', role: 'IEEE Vice Head', company: 'IEEE Student Branch', icon: 'users', desc: 'Technical leadership: workshops, events, and mentoring junior developers.', tags: ['Leadership', 'Mentoring', 'Android'] },
+        { id: 's3', year: '2020 – 2024', role: 'B.Sc. Computer Science', company: 'University', icon: 'book', desc: 'Software engineering, algorithms, data structures, and mobile development.', tags: ['CS', 'Software Engineering', 'Algorithms'] },
+    ];
+    defaults.forEach((item, i) => cont.appendChild(createTimelineCard(item, i % 2 === 0 ? 'timeline-left' : 'timeline-right')));
+    feather.replace();
+}
+
+function createTimelineCard(item, side) {
+    const w = document.createElement('div');
+    w.className = `timeline-item ${side} animate-on-scroll`;
+    w.innerHTML = `
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+            <div class="timeline-date">${item.year || item.date || ''}</div>
+            <h3 class="timeline-role">${item.role || item.title || ''}</h3>
+            <p class="timeline-company"><i data-feather="${item.icon || 'briefcase'}" class="w-3 h-3 inline mr-1"></i>${item.company || ''}</p>
+            <p class="timeline-desc">${item.desc || item.description || ''}</p>
+            <div class="timeline-tags">${(item.tags || []).map(t => `<span>${t}</span>`).join('')}</div>
+            ${isAdmin ? `<div class="flex gap-2 mt-3">
+                <button class="edit-btn admin-btn" onclick="handleEditTimeline('${item.id}')">Edit</button>
+                <button class="delete-btn admin-btn" onclick="handleDeleteTimeline('${item.id}')">Delete</button>
+            </div>` : ''}
+        </div>`;
+    return w;
+}
+
+window.handleEditTimeline = async id => {
+    let data = {};
+    try { data = (await getDoc(doc(db, 'timeline', id))).data() || {}; } catch {}
+    const statics = {
+        s1: { year: '2023 – Present', role: 'Android Developer', company: 'Freelance', icon: 'briefcase', desc: '', tags: [] },
+        s2: { year: '2022 – 2023', role: 'IEEE Vice Head', company: 'IEEE Student Branch', icon: 'users', desc: '', tags: [] },
+        s3: { year: '2020 – 2024', role: 'B.Sc. Computer Science', company: 'University', icon: 'book', desc: '', tags: [] }
+    };
+    if (!data.role) data = statics[id] || {};
+    document.getElementById('timeline-id').value = id;
+    document.getElementById('timeline-year').value = data.year || data.date || '';
+    document.getElementById('timeline-role').value = data.role || data.title || '';
+    document.getElementById('timeline-company').value = data.company || '';
+    document.getElementById('timeline-icon').value = data.icon || 'briefcase';
+    document.getElementById('timeline-desc').value = data.desc || data.description || '';
+    document.getElementById('timeline-tags').value = (data.tags || []).join(', ');
+    document.getElementById('timeline-modal-title').innerText = 'Edit Timeline Item';
+    openModal('timeline-modal');
+};
+
+window.handleDeleteTimeline = async id => {
+    if (!confirm('Delete this item?')) return;
+    try { await deleteDoc(doc(db, 'timeline', id)); } catch {}
+    loadTimeline();
+    showToast('Deleted.', 'info');
+};
+
+async function loadSiteSettings() {
+    try {
+        // Hero text
+        const snap = await getDoc(doc(db, 'site_content', 'hero'));
+        if (snap.exists()) {
+            const data = snap.data();
+            if (data.title)    document.getElementById('hero-name').textContent    = data.title;
+            if (data.subtitle) document.getElementById('hero-subtitle').textContent = data.subtitle;
+        }
+        // About text & image
+        const aboutSnap = await getDoc(doc(db, 'site_content', 'about'));
+        if (aboutSnap.exists()) {
+            const d = aboutSnap.data();
+            if (d.text)     document.getElementById('about-text').textContent = d.text;
+            if (d.imageUrl) document.getElementById('about-image').src        = d.imageUrl;
+        }
+        // Stats numbers
+        const statsSnap = await getDoc(doc(db, 'site_content', 'stats'));
+        if (statsSnap.exists()) {
+            const d = statsSnap.data();
+            if (d.years != null)   { const e=document.getElementById('stat-years');   if(e){e.dataset.target=d.years;  e.textContent='0';} }
+            if (d.apps != null)    { const e=document.getElementById('stat-apps');    if(e){e.dataset.target=d.apps;   e.textContent='0';} }
+            if (d.clients != null) { const e=document.getElementById('stat-clients'); if(e){e.dataset.target=d.clients;e.textContent='0';} }
+            if (d.lines)   { const e=document.querySelector('#stat-lines');        if(e) e.textContent=d.lines; }
+            if (d.lblYears)  { const e=document.querySelector('#stat-label-years');  if(e) e.textContent=d.lblYears; }
+            if (d.lblApps)   { const e=document.querySelector('#stat-label-apps');   if(e) e.textContent=d.lblApps; }
+            if (d.lblClients){ const e=document.querySelector('#stat-label-clients');if(e) e.textContent=d.lblClients; }
+        }
+    } catch (e) { console.warn('loadSiteSettings:', e); }
+}
+
+async function loadPrinciples() {
+    const grid = document.getElementById('principles-grid');
+    const loader = document.getElementById('principles-loader');
+    try {
+        let snap;
+        try { snap = await getDocs(query(collection(db, 'principles'), orderBy('order'))); }
+        catch { snap = await getDocs(collection(db, 'principles')); }
+        if (loader) loader.remove();
+        grid.innerHTML = '';
+        const themeName = localStorage.getItem('portfolioTheme') || 'dark';
+        const theme = themes[themeName];
+        snap.forEach(docSnap => {
+            const p = { id: docSnap.id, ...docSnap.data() };
+            grid.appendChild(createPrincipleCard(p, theme));
+        });
+        feather.replace();
+    } catch (e) {
+        if (loader) loader.remove();
+        grid.innerHTML = '<p class="col-span-3 text-center text-gray-400 py-8">Unable to load principles.</p>';
+    }
+}
+
+function createPrincipleCard(p, theme) {
+    const card = document.createElement('div');
+    card.className = `principle-card p-6 ${theme.principleCard}`;
+    card.innerHTML = `
+        <div class="flex justify-between items-start mb-4">
+            <i data-feather="${p.icon || 'star'}" class="w-8 h-8 ${theme.principleIcon}"></i>
+            ${isAdmin ? `<div class="flex gap-2">
+                <button class="edit-btn admin-btn" onclick="handleEditPrinciple('${p.id}')">Edit</button>
+                <button class="delete-btn admin-btn" onclick="handleDeletePrinciple('${p.id}')">Del</button>
+            </div>` : ''}
+        </div>
+        <h3 class="font-bold text-lg mb-2">${p.title}</h3>
+        <p class="text-sm leading-relaxed opacity-70">${p.description}</p>`;
+    return card;
+}
+
+async function loadSkills() {
+    const container = document.getElementById('skills-container');
+    const loader = document.getElementById('skills-loader');
+    try {
+        let snap;
+        try { snap = await getDocs(query(collection(db, 'skills'), orderBy('order'))); }
+        catch { snap = await getDocs(collection(db, 'skills')); }
+        if (loader) loader.remove();
+        container.innerHTML = '';
+        const themeName = localStorage.getItem('portfolioTheme') || 'dark';
+        snap.forEach(docSnap => {
+            const s = { id: docSnap.id, ...docSnap.data() };
+            container.appendChild(createSkillItem(s));
+        });
+        feather.replace();
+    } catch (e) {
+        if (loader) loader.remove();
+    }
+}
+
+function createSkillItem(s) {
+    const item = document.createElement('div');
+    item.className = 'skill-item flex flex-col items-center gap-2 text-center';
+    item.innerHTML = `
+        <i class="${s.iconClass} text-5xl colored"></i>
+        <span class="text-xs font-medium opacity-70">${s.name}</span>
+        ${isAdmin ? `<div class="flex gap-1">
+            <button class="edit-btn admin-btn" onclick="handleEditSkill('${s.id}')">E</button>
+            <button class="delete-btn admin-btn" onclick="handleDeleteSkill('${s.id}')">D</button>
+        </div>` : ''}`;
+    return item;
+}
+
+async function loadProjects() {
+    const grid = document.getElementById('projects-grid');
+    const loader = document.getElementById('projects-loader');
+    try {
+        // Fallback: if 'order' field missing on old docs, getDocs without orderBy
+        let snap;
+        try { snap = await getDocs(query(collection(db, 'projects'), orderBy('order'))); }
+        catch { snap = await getDocs(collection(db, 'projects')); }
+        if (loader) loader.remove();
+        grid.innerHTML = '';
+        const themeName = localStorage.getItem('portfolioTheme') || 'dark';
+        const theme = themes[themeName];
+        projects = [];
+        snap.forEach(docSnap => {
+            const p = { id: docSnap.id, ...docSnap.data() };
+            projects.push(p);
+            grid.appendChild(createProjectCard(p, theme));
+        });
+        feather.replace();
+    } catch (e) {
+        if (loader) loader.remove();
+        grid.innerHTML = '<p class="col-span-3 text-center text-gray-400 py-8">Unable to load projects.</p>';
+    }
+}
+
+function createProjectCard(p, theme) {
+    const card = document.createElement('div');
+    card.className = `project-card ${theme.projectCard} cursor-pointer`;
+    card.onclick = () => showProjectDetails(p.id);
+    card.innerHTML = `
+        <img src="${p.thumbnail || 'https://placehold.co/600x400'}" alt="${p.title}" class="w-full h-48 object-cover">
+        <div class="p-5">
+            <div class="flex justify-between items-start mb-2">
+                <h3 class="font-bold text-lg">${p.title}</h3>
+                ${isAdmin ? `<div class="flex gap-2" onclick="event.stopPropagation()">
+                    <button class="edit-btn admin-btn" onclick="handleEditProject('${p.id}')">Edit</button>
+                    <button class="delete-btn admin-btn" onclick="handleDeleteProject('${p.id}')">Del</button>
+                </div>` : ''}
             </div>
-        </div>
-    </div>
-
-    <!-- Principle Modal -->
-    <div id="principle-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
-        <div class="modal-content p-8 rounded-2xl shadow-xl w-full max-w-lg transform scale-95">
-            <h3 id="principle-modal-title" class="text-2xl font-bold mb-6">Add New Principle</h3>
-            <form id="principle-form">
-                <input type="hidden" id="principle-id">
-                <div class="grid grid-cols-1 gap-6">
-                    <input type="text" id="principle-title" placeholder="Principle Title" class="modal-input p-3 rounded-xl" required>
-                    <textarea id="principle-description" placeholder="Description" class="modal-input p-3 rounded-xl h-24" required></textarea>
-                    <input type="text" id="principle-icon" placeholder="Feather Icon Name (e.g., zap)" class="modal-input p-3 rounded-xl" required>
-                </div>
-                <div class="flex justify-end space-x-4 mt-6">
-                    <button type="button" class="modal-close bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">Cancel</button>
-                    <button type="submit" id="principle-submit-btn" class="text-black font-bold py-2 px-4 rounded-xl">Save Principle</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Skill Modal -->
-    <div id="skill-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
-        <div class="modal-content p-8 rounded-2xl shadow-xl w-full max-w-lg transform scale-95">
-            <h3 id="skill-modal-title" class="text-2xl font-bold mb-6">Add New Skill</h3>
-            <form id="skill-form">
-                <input type="hidden" id="skill-id">
-                <div class="grid grid-cols-1 gap-6">
-                    <input type="text" id="skill-name" placeholder="Skill Name (e.g., Kotlin)" class="modal-input p-3 rounded-xl" required>
-                    <input type="text" id="skill-icon-class" placeholder="Devicon Class (e.g., devicon-kotlin-plain)" class="modal-input p-3 rounded-xl" required>
-                    <p class="text-xs">Find icon classes on <a href="https://devicon.dev/" target="_blank" class="underline">devicon.dev</a></p>
-                </div>
-                <div class="flex justify-end space-x-4 mt-6">
-                    <button type="button" class="modal-close bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">Cancel</button>
-                    <button type="submit" id="skill-submit-btn" class="text-black font-bold py-2 px-4 rounded-xl">Save Skill</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- About Modal -->
-    <div id="about-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
-        <div class="modal-content p-8 rounded-2xl shadow-xl w-full max-w-lg transform scale-95">
-            <h3 class="text-2xl font-bold mb-6">Edit About Section</h3>
-            <form id="about-form">
-                <div class="grid grid-cols-1 gap-6">
-                    <textarea id="about-modal-text" placeholder="About me text" class="modal-input p-3 rounded-xl h-40" required></textarea>
-                    <input type="url" id="about-image-url" placeholder="Profile Image URL" class="modal-input p-3 rounded-xl" required>
-                </div>
-                <div class="flex justify-end space-x-4 mt-6">
-                    <button type="button" class="modal-close bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">Cancel</button>
-                    <button type="submit" id="about-submit-btn" class="text-black font-bold py-2 px-4 rounded-xl flex items-center">
-                        <span id="about-submit-text">Save</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Text Edit Modal -->
-    <div id="text-edit-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
-        <div class="modal-content p-8 rounded-2xl shadow-xl w-full max-w-lg transform scale-95">
-            <h3 id="text-edit-modal-title" class="text-2xl font-bold mb-6">Edit Text</h3>
-            <form id="text-edit-form">
-                <input type="hidden" id="text-edit-doc">
-                <input type="hidden" id="text-edit-field">
-                <textarea id="text-edit-content" class="modal-input p-3 rounded-xl h-32 w-full" required></textarea>
-                <div class="flex justify-end space-x-4 mt-6">
-                    <button type="button" class="modal-close bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">Cancel</button>
-                    <button type="submit" id="text-edit-submit-btn" class="text-black font-bold py-2 px-4 rounded-xl">Save</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Testimonial Submit Modal -->
-    <div id="testimonial-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
-        <div class="modal-content p-8 rounded-2xl shadow-xl w-full max-w-lg transform scale-95">
-            <h3 class="text-2xl font-bold mb-2">Leave a Review</h3>
-            <p class="text-sm text-gray-400 mb-6">Share your experience working with Robert</p>
-            <form id="testimonial-form">
-                <div class="grid grid-cols-1 gap-4">
-                    <input type="text" id="t-name" placeholder="Your Name" class="modal-input p-3 rounded-xl" required>
-                    <input type="text" id="t-role" placeholder="Your Role / Company" class="modal-input p-3 rounded-xl" required>
-                    <textarea id="t-message" placeholder="Your review..." class="modal-input p-3 rounded-xl h-28" required></textarea>
-                    <div>
-                        <p class="text-sm font-medium mb-2">Rating</p>
-                        <div class="star-rating flex gap-2" id="star-rating">
-                            <span class="star text-3xl cursor-pointer" data-val="1">☆</span>
-                            <span class="star text-3xl cursor-pointer" data-val="2">☆</span>
-                            <span class="star text-3xl cursor-pointer" data-val="3">☆</span>
-                            <span class="star text-3xl cursor-pointer" data-val="4">☆</span>
-                            <span class="star text-3xl cursor-pointer" data-val="5">☆</span>
-                        </div>
-                        <input type="hidden" id="t-rating" value="0">
-                    </div>
-                </div>
-                <div class="flex justify-end space-x-4 mt-6">
-                    <button type="button" class="modal-close bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">Cancel</button>
-                    <button type="submit" id="testimonial-submit-btn" class="text-black font-bold py-2 px-4 rounded-xl flex items-center gap-2">
-                        <i data-feather="send" class="w-4 h-4"></i>
-                        <span>Submit Review</span>
-                    </button>
-                </div>
-                <p class="text-xs text-gray-500 mt-3 text-center">Reviews are visible after admin approval.</p>
-            </form>
-        </div>
-    </div>
-
-    <!-- Testimonial Admin Panel Modal -->
-    <div id="testimonial-admin-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
-        <div class="modal-content p-8 rounded-2xl shadow-xl w-full max-w-2xl transform scale-95 max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold">Pending Reviews</h3>
-                <button class="modal-close text-2xl">&times;</button>
+            <p class="text-sm opacity-60 leading-relaxed mb-4 line-clamp-2">${p.description}</p>
+            <div class="flex flex-wrap gap-1.5">
+                ${(p.technologies || []).slice(0, 4).map(t => `<span class="tech-badge text-xs px-2 py-0.5 rounded-md font-mono">${t}</span>`).join('')}
+                ${(p.technologies || []).length > 4 ? `<span class="tech-badge text-xs px-2 py-0.5 rounded-md font-mono">+${p.technologies.length - 4}</span>` : ''}
             </div>
-            <div id="            <div id="pending-testimonials-list" class="flex-grow overflow-y-auto space-y-4">
-                <div class="loader mx-auto"></div>
-            </div>
-        </div>
-    </div>
+        </div>`;
+    // Tech badge styling
+    card.querySelectorAll('.tech-badge').forEach(b => {
+        const themeName = localStorage.getItem('portfolioTheme') || 'dark';
+        if (themeName === 'dark') {
+            b.style.cssText = 'background:rgba(0,241,94,0.08);color:#00f15e;border:1px solid rgba(0,241,94,0.15)';
+        } else {
+            b.style.cssText = 'background:rgba(37,99,235,0.08);color:#2563eb;border:1px solid rgba(37,99,235,0.15)';
+        }
+    });
+    return card;
+}
 
-    <!-- Timeline Modal -->
-    <div id="timeline-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
-        <div class="modal-content p-8 rounded-2xl shadow-xl w-full max-w-lg transform scale-95">
-            <h3 id="timeline-modal-title" class="text-2xl font-bold mb-6">Add Timeline Item</h3>
-            <form id="timeline-form">
-                <input type="hidden" id="timeline-id">
-                <div class="grid grid-cols-1 gap-4">
-                    <input type="text" id="timeline-year" placeholder="Year / Period (e.g. 2023 - Present)" class="modal-input p-3 rounded-xl" required>
-                    <input type="text" id="timeline-role" placeholder="Role / Title" class="modal-input p-3 rounded-xl" required>
-                    <input type="text" id="timeline-company" placeholder="Company / Institution" class="modal-input p-3 rounded-xl" required>
-                    <input type="text" id="timeline-icon" placeholder="Feather Icon (e.g. briefcase, book, users)" class="modal-input p-3 rounded-xl">
-                    <textarea id="timeline-desc" placeholder="Description" class="modal-input p-3 rounded-xl h-24" required></textarea>
-                    <input type="text" id="timeline-tags" placeholder="Tags (comma separated)" class="modal-input p-3 rounded-xl">
-                </div>
-                <div class="flex justify-end space-x-4 mt-6">
-                    <button type="button" class="modal-close bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">Cancel</button>
-                    <button type="submit" id="timeline-submit-btn" class="text-black font-bold py-2 px-4 rounded-xl">Save</button>
-                </div>
-            </form>
-        </div>
-    </div>
+function renderAllContent() {
+    // Only re-render if initial load already completed (loaders are gone)
+    // This prevents double-loading on first applyTheme() call
+    const principlesLoaded = !document.getElementById('principles-loader') && document.getElementById('principles-grid')?.children.length > 0;
+    const skillsLoaded     = !document.getElementById('skills-loader')    && document.getElementById('skills-container')?.children.length > 0;
+    const projectsLoaded   = !document.getElementById('projects-loader')  && document.getElementById('projects-grid')?.children.length > 0;
+    const timelineLoaded   = !document.getElementById('timeline-loader');
 
-    <!-- Stats Edit Modal -->
-    <div id="stats-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
-        <div class="modal-content p-8 rounded-2xl shadow-xl w-full max-w-md transform scale-95">
-            <h3 class="text-2xl font-bold mb-6">Edit Stats</h3>
-            <form id="stats-form">
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-xs font-mono opacity-60 mb-1 block">Years</label>
-                        <input type="number" id="stat-edit-years" class="modal-input p-3 rounded-xl w-full" min="0"></div>
-                    <div><label class="text-xs font-mono opacity-60 mb-1 block">Apps Built</label>
-                        <input type="number" id="stat-edit-apps" class="modal-input p-3 rounded-xl w-full" min="0"></div>
-                    <div><label class="text-xs font-mono opacity-60 mb-1 block">Clients</label>
-                        <input type="number" id="stat-edit-clients" class="modal-input p-3 rounded-xl w-full" min="0"></div>
-                    <div><label class="text-xs font-mono opacity-60 mb-1 block">Lines (text)</label>
-                        <input type="text" id="stat-edit-lines" class="modal-input p-3 rounded-xl w-full"></div>
-                    <div><label class="text-xs font-mono opacity-60 mb-1 block">Label: Years</label>
-                        <input type="text" id="stat-edit-label-years" class="modal-input p-3 rounded-xl w-full"></div>
-                    <div><label class="text-xs font-mono opacity-60 mb-1 block">Label: Apps</label>
-                        <input type="text" id="stat-edit-label-apps" class="modal-input p-3 rounded-xl w-full"></div>
-                    <div class="col-span-2"><label class="text-xs font-mono opacity-60 mb-1 block">Label: Clients</label>
-                        <input type="text" id="stat-edit-label-clients" class="modal-input p-3 rounded-xl w-full"></div>
-                </div>
-                <div class="flex justify-end space-x-4 mt-6">
-                    <button type="button" class="modal-close bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">Cancel</button>
-                    <button type="submit" id="stats-submit-btn" class="text-black font-bold py-2 px-4 rounded-xl">Save Stats</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    if (principlesLoaded) loadPrinciples();
+    if (skillsLoaded)     loadSkills();
+    if (projectsLoaded)   loadProjects();
+    if (timelineLoaded)   loadTimeline();
+}
 
-    <script type="module" src="script.js"></script>
-</body>
-</html>
+// =====================================================
+//  ADMIN CRUD HANDLERS
+// =====================================================
+window.handleEditPrinciple = async (id) => {
+    const p = (await getDoc(doc(db, 'principles', id))).data();
+    document.getElementById('principle-id').value = id;
+    document.getElementById('principle-title').value = p.title;
+    document.getElementById('principle-description').value = p.description;
+    document.getElementById('principle-icon').value = p.icon;
+    document.getElementById('principle-modal-title').innerText = 'Edit Principle';
+    openModal('principle-modal');
+};
+
+window.handleDeletePrinciple = async (id) => {
+    if (confirm('Delete this principle?')) {
+        await deleteDoc(doc(db, 'principles', id));
+        loadPrinciples();
+        showToast('Principle deleted.', 'info');
+    }
+};
+
+window.handleEditSkill = async (id) => {
+    const s = (await getDoc(doc(db, 'skills', id))).data();
+    document.getElementById('skill-id').value = id;
+    document.getElementById('skill-name').value = s.name;
+    document.getElementById('skill-icon-class').value = s.iconClass;
+    document.getElementById('skill-modal-title').innerText = 'Edit Skill';
+    openModal('skill-modal');
+};
+
+window.handleDeleteSkill = async (id) => {
+    if (confirm('Delete this skill?')) {
+        await deleteDoc(doc(db, 'skills', id));
+        loadSkills();
+        showToast('Skill deleted.', 'info');
+    }
+};
+
+window.handleEditProject = async (id) => {
+    const p = projects.find(pr => pr.id === id);
+    if (!p) return;
+    document.getElementById('project-id').value = id;
+    document.getElementById('project-title').value = p.title;
+    document.getElementById('project-description').value = p.description;
+    document.getElementById('project-thumbnail-url').value = p.thumbnail || '';
+    document.getElementById('project-tech').value = (p.technologies || []).join(', ');
+    document.getElementById('project-source-link').value = p.sourceLink || '';
+    document.getElementById('project-live-link').value = p.liveLink || '';
+    const imagesContainer = document.getElementById('additional-images-container');
+    imagesContainer.innerHTML = '';
+    (p.images || []).forEach(img => addImageRow(img.url, img.description));
+    feather.replace();
+    document.getElementById('project-modal-title').innerText = 'Edit Project';
+    openModal('project-modal');
+};
+
+window.handleDeleteProject = async (id) => {
+    if (confirm('Delete this project?')) {
+        await deleteDoc(doc(db, 'projects', id));
+        loadProjects();
+        showToast('Project deleted.', 'info');
+    }
+};
+
+window.showProjectDetails = (id) => {
+    const project = projects.find(p => p.id === id);
+    if (!project) return;
+    const themeName = localStorage.getItem('portfolioTheme') || 'dark';
+    const theme = themes[themeName];
+    document.getElementById('detail-title').innerText = project.title;
+    document.getElementById('detail-description').innerText = project.description;
+    const mainImage = document.getElementById('detail-main-image');
+    const imageDesc = document.getElementById('detail-image-description');
+    const thumbnailsContainer = document.getElementById('detail-thumbnails');
+    thumbnailsContainer.innerHTML = '';
+    const allImages = [{ url: project.thumbnail, description: 'Project Thumbnail' }, ...(project.images || [])];
+
+    function updateMainImage(imgObj) {
+        mainImage.src = imgObj.url;
+        imageDesc.textContent = imgObj.description || '';
+    }
+    updateMainImage(allImages[0]);
+    allImages.forEach(imgObj => {
+        const thumb = document.createElement('img');
+        thumb.src = imgObj.url;
+        thumb.className = 'gallery-thumbnail w-20 h-16 object-cover rounded-lg';
+        if (imgObj.url === mainImage.src) thumb.classList.add('active', theme.activeThumb);
+        thumb.addEventListener('click', () => {
+            updateMainImage(imgObj);
+            document.querySelectorAll('.gallery-thumbnail').forEach(t => t.classList.remove('active', ...Object.values(themes).map(t => t.activeThumb)));
+            thumb.classList.add('active', theme.activeThumb);
+        });
+        thumbnailsContainer.appendChild(thumb);
+    });
+
+    const isLight = themeName === 'light';
+    document.getElementById('detail-tech').innerHTML = (project.technologies || [])
+        .map(t => `<span class="${isLight ? 'bg-blue-50 text-blue-600' : 'bg-gray-800 text-green-400'} text-sm font-semibold px-3 py-1 rounded-full font-mono">${t}</span>`).join('');
+
+    const linksContainer = document.getElementById('detail-links');
+    linksContainer.innerHTML = '';
+    if (project.sourceLink) {
+        const a = document.createElement('a'); a.href = project.sourceLink; a.target = '_blank';
+        a.innerText = 'Source Code'; a.className = `font-bold py-2 px-4 rounded-xl transition ${theme.detailLinkSource}`;
+        linksContainer.appendChild(a);
+    }
+    if (project.liveLink) {
+        const a = document.createElement('a'); a.href = project.liveLink; a.target = '_blank';
+        a.innerText = 'Live Link'; a.className = `font-bold py-2 px-4 rounded-xl transition ${theme.detailLinkLive}`;
+        linksContainer.appendChild(a);
+    }
+    openModal('project-detail-modal');
+};
+
+// =====================================================
+//  MODAL HELPERS
+// =====================================================
+function openModal(id) {
+    const modal = document.getElementById(id);
+    modal.classList.remove('hidden');
+    setTimeout(() => modal.querySelector('.modal-content').classList.remove('scale-95'), 10);
+    applyTheme(localStorage.getItem('portfolioTheme') || 'dark');
+}
+
+function closeModal(id) {
+    const modal = document.getElementById(id);
+    modal.querySelector('.modal-content').classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+}
+
+function addImageRow(url = '', description = '') {
+    const themeName = localStorage.getItem('portfolioTheme') || 'dark';
+    const inputClasses = themes[themeName].modalInput;
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-2';
+    row.innerHTML = `
+        <input type="url" placeholder="Image URL" class="modal-input ${inputClasses} p-2 rounded-xl flex-grow additional-image-url" value="${url}">
+        <input type="text" placeholder="Image Description" class="modal-input ${inputClasses} p-2 rounded-xl flex-grow-[2] additional-image-desc" value="${description}">
+        <button type="button" class="p-2 bg-red-500/30 hover:bg-red-500/60 rounded-xl remove-image-btn"><i data-feather="trash-2" class="w-4 h-4"></i></button>`;
+    document.getElementById('additional-images-container').appendChild(row);
+    feather.replace();
+}
+
+// =====================================================
+//  FORM SUBMISSIONS
+// =====================================================
+document.addEventListener('DOMContentLoaded', () => {
+    feather.replace();
+    initLoadingScreen();
+    initScrollProgress();
+    initMobileMenu();
+    initTypewriter();
+    initStatsCounters();
+    initStarRating();
+
+    // Theme switcher
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+    });
+
+    const savedTheme = localStorage.getItem('portfolioTheme') || 'dark';
+    applyTheme(savedTheme);
+    loadAllData();
+
+    // Auth state
+    onAuthStateChanged(auth, user => {
+        isAdmin = !!user;
+        document.getElementById('login-btn').classList.toggle('hidden', isAdmin);
+        document.getElementById('logout-btn').classList.toggle('hidden', !isAdmin);
+        document.querySelectorAll('#add-project-btn, #add-principle-btn, #add-skill-btn').forEach(btn => btn.classList.toggle('hidden', !isAdmin));
+        if (isAdmin) {
+            // Add testimonials admin button to navbar area
+            const navLogoAccent = document.getElementById('nav-logo-accent');
+            if (!document.getElementById('testimonials-admin-btn')) {
+                const btn = document.createElement('button');
+                btn.id = 'testimonials-admin-btn';
+                btn.className = 'text-xs font-mono text-yellow-400 hover:text-yellow-300 transition hidden md:block';
+                btn.textContent = '⚡ Reviews';
+                btn.addEventListener('click', () => {
+                    openModal('testimonial-admin-modal');
+                    loadPendingTestimonials();
+                });
+                document.getElementById('logout-btn').before(btn);
+            }
+        }
+        renderAllContent();
+    });
+
+    // Login
+    document.getElementById('login-btn').addEventListener('click', () => openModal('login-modal'));
+    document.getElementById('login-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = document.getElementById('login-submit-btn');
+        btn.textContent = 'Logging in...';
+        try {
+            await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
+            closeModal('login-modal');
+            showToast('Welcome back, Admin!', 'success');
+        } catch (err) {
+            document.getElementById('login-error').textContent = 'Invalid credentials.';
+        } finally {
+            btn.textContent = 'Login';
+        }
+    });
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+        await signOut(auth);
+        showToast('Logged out.', 'info');
+    });
+
+    // Close modals
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', e => {
+            if (e.target === modal || e.target.classList.contains('modal-close')) closeModal(modal.id);
+        });
+    });
+
+    // Project form
+    document.getElementById('project-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = document.getElementById('project-submit-btn');
+        document.getElementById('project-submit-text').textContent = 'Saving...';
+        btn.disabled = true;
+        const id = document.getElementById('project-id').value;
+        const images = Array.from(document.querySelectorAll('.additional-image-url')).map((el, i) => ({
+            url: el.value,
+            description: document.querySelectorAll('.additional-image-desc')[i]?.value || ''
+        })).filter(img => img.url);
+        const data = {
+            title: document.getElementById('project-title').value,
+            description: document.getElementById('project-description').value,
+            thumbnail: document.getElementById('project-thumbnail-url').value,
+            technologies: document.getElementById('project-tech').value.split(',').map(t => t.trim()).filter(Boolean),
+            sourceLink: document.getElementById('project-source-link').value,
+            liveLink: document.getElementById('project-live-link').value,
+            images,
+            order: Date.now(),
+        };
+        try {
+            if (id) await setDoc(doc(db, 'projects', id), data, { merge: true });
+            else await addDoc(collection(db, 'projects'), data);
+            closeModal('project-modal');
+            loadProjects();
+            showToast('Project saved!', 'success');
+        } catch (err) {
+            showToast('Error saving project.', 'error');
+        } finally {
+            document.getElementById('project-submit-text').textContent = 'Save Project';
+            btn.disabled = false;
+        }
+    });
+
+    // Principle form
+    document.getElementById('principle-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = document.getElementById('principle-id').value;
+        const data = {
+            title: document.getElementById('principle-title').value,
+            description: document.getElementById('principle-description').value,
+            icon: document.getElementById('principle-icon').value,
+            order: id ? undefined : Date.now(),
+        };
+        if (!id) data.order = Date.now();
+        try {
+            if (id) await updateDoc(doc(db, 'principles', id), data);
+            else await addDoc(collection(db, 'principles'), data);
+            closeModal('principle-modal');
+            loadPrinciples();
+            showToast('Principle saved!', 'success');
+        } catch { showToast('Error saving.', 'error'); }
+    });
+
+    // Skill form
+    document.getElementById('skill-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = document.getElementById('skill-id').value;
+        const data = {
+            name: document.getElementById('skill-name').value,
+            iconClass: document.getElementById('skill-icon-class').value,
+            order: id ? undefined : Date.now(),
+        };
+        try {
+            if (id) await updateDoc(doc(db, 'skills', id), data);
+            else await addDoc(collection(db, 'skills'), { ...data, order: Date.now() });
+            closeModal('skill-modal');
+            loadSkills();
+            showToast('Skill saved!', 'success');
+        } catch { showToast('Error saving.', 'error'); }
+    });
+
+    // About form
+    document.getElementById('about-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const text = document.getElementById('about-modal-text').value;
+        const imageUrl = document.getElementById('about-image-url').value;
+        try {
+            await setDoc(doc(db, 'site_content', 'about'), { text, imageUrl }, { merge: true });
+            document.getElementById('about-text').textContent = text;
+            document.getElementById('about-image').src = imageUrl;
+            closeModal('about-modal');
+            showToast('About section updated!', 'success');
+        } catch { showToast('Error saving.', 'error'); }
+    });
+    document.getElementById('edit-about-btn').addEventListener('click', () => {
+        document.getElementById('about-modal-text').value = document.getElementById('about-text').textContent;
+        document.getElementById('about-image-url').value = document.getElementById('about-image').src;
+        openModal('about-modal');
+    });
+
+    // Testimonial submit
+    document.getElementById('leave-feedback-btn').addEventListener('click', () => openModal('testimonial-modal'));
+    document.getElementById('testimonial-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const rating = parseInt(document.getElementById('t-rating').value);
+        if (!rating) { showToast('Please select a rating!', 'error'); return; }
+        const btn = document.getElementById('testimonial-submit-btn');
+        btn.disabled = true;
+        try {
+            await addDoc(collection(db, 'testimonials'), {
+                name:    document.getElementById('t-name').value,
+                role:    document.getElementById('t-role').value,
+                message: document.getElementById('t-message').value,
+                rating,
+                status: 'pending',
+                timestamp: serverTimestamp()
+            });
+            closeModal('testimonial-modal');
+            document.getElementById('testimonial-form').reset();
+            document.querySelectorAll('#star-rating .star').forEach(s => s.classList.remove('filled'));
+            document.getElementById('t-rating').value = '0';
+            showToast('Review submitted! It will appear after approval. 🌟', 'success', 5000);
+        } catch (err) {
+            showToast('Error submitting review.', 'error');
+            console.error('Testimonial error:', err);
+        }
+        finally { btn.disabled = false; }
+    });
+
+    // Add image button
+    document.getElementById('add-image-btn').addEventListener('click', () => addImageRow());
+    document.getElementById('additional-images-container').addEventListener('click', e => {
+        if (e.target.closest('.remove-image-btn')) e.target.closest('.flex').remove();
+    });
+
+    // Copy email
+    document.getElementById('copy-email-btn').addEventListener('click', () => {
+        const email = document.getElementById('email-text').textContent.trim();
+        navigator.clipboard.writeText(email).then(() => {
+            const msg = document.getElementById('copy-success-msg');
+            msg.classList.remove('opacity-0');
+            showToast('Email copied!', 'success', 2000);
+            setTimeout(() => msg.classList.add('opacity-0'), 2000);
+        });
+    });
+
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Scroll animations
+    scrollObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) entry.target.classList.add('is-visible');
+        });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.animate-on-scroll').forEach(el => scrollObserver.observe(el));
+
+    // Custom cursor
+    const cursorDot = document.querySelector('.cursor-dot');
+    const cursorOutline = document.querySelector('.cursor-outline');
+    const aboutSection = document.getElementById('about');
+    let cursorBoundary = aboutSection.offsetTop;
+    window.addEventListener('resize', () => { cursorBoundary = aboutSection.offsetTop; });
+    const mouse = { x: -100, y: -100 };
+    const dot = { x: -100, y: -100, vx: 0, vy: 0 };
+    const outline = { x: -100, y: -100, vx: 0, vy: 0 };
+    window.addEventListener('mousemove', e => {
+        if (e.clientY < cursorBoundary) {
+            cursorDot.style.opacity = '1';
+            cursorOutline.style.opacity = '1';
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        } else {
+            cursorDot.style.opacity = '0';
+            cursorOutline.style.opacity = '0';
+        }
+    });
+    document.body.addEventListener('mouseleave', () => {
+        cursorDot.style.opacity = '0';
+        cursorOutline.style.opacity = '0';
+    });
+    function animateCursor() {
+        const ds = 0.2, os = 0.1, d = 0.75;
+        dot.vx += (mouse.x - dot.x) * ds; dot.vy += (mouse.y - dot.y) * ds;
+        dot.vx *= d; dot.vy *= d; dot.x += dot.vx; dot.y += dot.vy;
+        cursorDot.style.transform = `translate(${dot.x}px, ${dot.y}px) translate(-50%, -50%)`;
+        outline.vx += (mouse.x - outline.x) * os; outline.vy += (mouse.y - outline.y) * os;
+        outline.vx *= d; outline.vy *= d; outline.x += outline.vx; outline.y += outline.vy;
+        cursorOutline.style.transform = `translate(${outline.x}px, ${outline.y}px) translate(-50%, -50%)`;
+        requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
+    setTimeout(() => {
+        document.querySelectorAll('a, button, .project-card, .principle-card, .skill-item').forEach(el => {
+            el.addEventListener('mouseover', () => { cursorDot.classList.add('hovered'); cursorOutline.classList.add('hovered'); });
+            el.addEventListener('mouseout', () => { cursorDot.classList.remove('hovered'); cursorOutline.classList.remove('hovered'); });
+        });
+    }, 1500);
+
+    // Parallax BG
+    const bgLayer2 = document.getElementById('bg-layer-2');
+    window.addEventListener('mousemove', (e) => {
+        const x = Math.round((e.clientX / window.innerWidth) * 100);
+        const y = Math.round((e.clientY / window.innerHeight) * 100);
+        const themeName = localStorage.getItem('portfolioTheme') || 'dark';
+        const theme = themes[themeName];
+        if (theme.bgLayer2.includes('radial-gradient')) {
+            try {
+                const bgRule = theme.bgLayer2.match(/\[(.*?)\]/)[1].replace(/_/g, ' ');
+                bgLayer2.style.background = bgRule.replace(/at .*?,/, `at ${x}% ${y}%,`);
+            } catch (e) {}
+        }
+    });
+
+    // Hero 3D tilt
+    const heroSection = document.getElementById('hero');
+    heroSection.addEventListener('mousemove', (e) => {
+        const { clientX, clientY, currentTarget } = e;
+        const { clientWidth, clientHeight } = currentTarget;
+        const xRot = 15 * ((clientY - clientHeight / 2) / clientHeight);
+        const yRot = -15 * ((clientX - clientWidth / 2) / clientWidth);
+        const content = heroSection.querySelector('div');
+        content.style.transform = `perspective(1000px) rotateX(${xRot}deg) rotateY(${yRot}deg)`;
+        content.style.transition = 'transform 0.1s ease';
+    });
+    heroSection.addEventListener('mouseleave', () => {
+        heroSection.querySelector('div').style.transform = 'perspective(1000px) rotateX(0) rotateY(0)';
+        heroSection.querySelector('div').style.transition = 'transform 0.5s ease';
+    });
+
+    // Code background
+    (function initCodeBackground() {
+        const container = document.getElementById('code-background');
+        window.addEventListener('scroll', () => {
+            container.style.transform = `translateY(${window.scrollY * -0.15}px)`;
+        }, { passive: true });
+        const snippets = [
+            'Text(text = "Hello, Robert!")',
+            'val flow = MutableStateFlow(0)',
+            'suspend fun fetchData(): Result<T>',
+            'LazyColumn { items(list) { ... } }',
+            '@Composable fun Screen() {}',
+            'Modifier.padding(16.dp)',
+            'viewModel.state.collect { ... }',
+            'data class User(val name: String)',
+            '@HiltViewModel class VM : ViewModel()',
+            'LaunchedEffect(key) { ... }',
+            'Room.databaseBuilder(...).build()',
+            'Retrofit.Builder().baseUrl(...)',
+        ];
+        const create = () => {
+            if (document.hidden || container.childElementCount > 25) return;
+            const el = document.createElement('pre');
+            el.className = 'code-line';
+            el.textContent = snippets[Math.floor(Math.random() * snippets.length)];
+            el.style.top = `${Math.random() * 100}%`;
+            el.style.left = `${Math.random() * 90}%`;
+            const disappear = () => {
+                el.style.opacity = '0';
+                el.style.transform = 'scale(0.5)';
+                el.addEventListener('transitionend', () => el.remove(), { once: true });
+            };
+            el.addEventListener('mouseover', disappear, { once: true });
+            container.appendChild(el);
+            setTimeout(disappear, 8000 + Math.random() * 5000);
+        };
+        setInterval(create, 1200);
+    })();
+
+    // Edit buttons visibility for admin
+    document.querySelectorAll('.edit-icon').forEach(btn => {
+        const parent = btn.closest('.editable-container');
+        if (parent) {
+            parent.addEventListener('mouseenter', () => {
+                if (isAdmin) btn.style.display = 'block';
+            });
+            parent.addEventListener('mouseleave', () => { btn.style.display = 'none'; });
+        }
+    });
+
+    // Hero text edit
+    document.getElementById('edit-hero-title-btn').addEventListener('click', () => {
+        document.getElementById('text-edit-modal-title').textContent = 'Edit Name';
+        document.getElementById('text-edit-doc').value = 'hero';
+        document.getElementById('text-edit-field').value = 'title';
+        document.getElementById('text-edit-content').value = document.getElementById('hero-name').textContent;
+        openModal('text-edit-modal');
+    });
+    document.getElementById('edit-hero-subtitle-btn').addEventListener('click', () => {
+        document.getElementById('text-edit-modal-title').textContent = 'Edit Subtitle';
+        document.getElementById('text-edit-doc').value = 'hero';
+        document.getElementById('text-edit-field').value = 'subtitle';
+        document.getElementById('text-edit-content').value = document.getElementById('hero-subtitle').textContent;
+        openModal('text-edit-modal');
+    });
+    document.getElementById('text-edit-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const docName = document.getElementById('text-edit-doc').value;
+        const field = document.getElementById('text-edit-field').value;
+        const content = document.getElementById('text-edit-content').value;
+        try {
+            await setDoc(doc(db, 'site_content', docName), { [field]: content }, { merge: true });
+            if (docName === 'hero' && field === 'title') document.getElementById('hero-name').textContent = content;
+            if (docName === 'hero' && field === 'subtitle') document.getElementById('hero-subtitle').textContent = content;
+            closeModal('text-edit-modal');
+            showToast('Text updated!', 'success');
+        } catch { showToast('Error saving.', 'error'); }
+    });
+
+    // Add project/principle/skill buttons
+    document.getElementById('add-project-btn').addEventListener('click', () => {
+        document.getElementById('project-id').value = '';
+        document.getElementById('project-form').reset();
+        document.getElementById('additional-images-container').innerHTML = '';
+        document.getElementById('project-modal-title').innerText = 'Add New Project';
+        openModal('project-modal');
+    });
+    document.getElementById('add-principle-btn').addEventListener('click', () => {
+        document.getElementById('principle-id').value = '';
+        document.getElementById('principle-form').reset();
+        document.getElementById('principle-modal-title').innerText = 'Add New Principle';
+        openModal('principle-modal');
+    });
+    document.getElementById('add-skill-btn').addEventListener('click', () => {
+        document.getElementById('skill-id').value = '';
+        document.getElementById('skill-form').reset();
+        document.getElementById('skill-modal-title').innerText = 'Add New Skill';
+        openModal('skill-modal');
+    });
+});
+
+// ── TIMELINE & STATS FORM HANDLERS (appended) ──────
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Timeline
+    const addTlBtn = document.getElementById('add-timeline-btn');
+    if (addTlBtn) addTlBtn.addEventListener('click', () => {
+        document.getElementById('timeline-id').value = '';
+        document.getElementById('timeline-form').reset();
+        document.getElementById('timeline-modal-title').innerText = 'Add Timeline Item';
+        openModal('timeline-modal');
+    });
+    const tlForm = document.getElementById('timeline-form');
+    if (tlForm) tlForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = document.getElementById('timeline-id').value;
+        const data = {
+            year:    document.getElementById('timeline-year').value,
+            role:    document.getElementById('timeline-role').value,
+            company: document.getElementById('timeline-company').value,
+            icon:    document.getElementById('timeline-icon').value || 'briefcase',
+            desc:    document.getElementById('timeline-desc').value,
+            tags:    document.getElementById('timeline-tags').value.split(',').map(t => t.trim()).filter(Boolean)
+        };
+        try {
+            if (id) await setDoc(doc(db, 'timeline', id), data, { merge: true });
+            else    await addDoc(collection(db, 'timeline'), { ...data, order: Date.now() });
+            closeModal('timeline-modal'); loadTimeline(); showToast('Saved!', 'success');
+        } catch(err) { showToast('Error.', 'error'); console.error(err); }
+    });
+
+    // Stats
+    const esBtn = document.getElementById('edit-stats-btn');
+    if (esBtn) esBtn.addEventListener('click', () => {
+        document.getElementById('stat-edit-years').value         = document.getElementById('stat-years')?.dataset.target || '2';
+        document.getElementById('stat-edit-apps').value          = document.getElementById('stat-apps')?.dataset.target || '15';
+        document.getElementById('stat-edit-clients').value       = document.getElementById('stat-clients')?.dataset.target || '10';
+        document.getElementById('stat-edit-lines').value         = document.querySelector('#stat-lines')?.textContent || '∞';
+        document.getElementById('stat-edit-label-years').value   = document.querySelector('#stat-label-years')?.textContent || 'Experience';
+        document.getElementById('stat-edit-label-apps').value    = document.querySelector('#stat-label-apps')?.textContent || 'Built & Deployed';
+        document.getElementById('stat-edit-label-clients').value = document.querySelector('#stat-label-clients')?.textContent || 'Satisfied';
+        openModal('stats-modal');
+    });
+    const sfForm = document.getElementById('stats-form');
+    if (sfForm) sfForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const years=document.getElementById('stat-edit-years').value, apps=document.getElementById('stat-edit-apps').value,
+              clients=document.getElementById('stat-edit-clients').value, lines=document.getElementById('stat-edit-lines').value,
+              lblYears=document.getElementById('stat-edit-label-years').value, lblApps=document.getElementById('stat-edit-label-apps').value,
+              lblClients=document.getElementById('stat-edit-label-clients').value;
+        try {
+            await setDoc(doc(db,'site_content','stats'), {years:+years,apps:+apps,clients:+clients,lines,lblYears,lblApps,lblClients}, {merge:true});
+            const sy=document.getElementById('stat-years');   if(sy){sy.dataset.target=years;  sy.textContent='0';}
+            const sa=document.getElementById('stat-apps');    if(sa){sa.dataset.target=apps;   sa.textContent='0';}
+            const sc=document.getElementById('stat-clients'); if(sc){sc.dataset.target=clients;sc.textContent='0';}
+            const sl=document.querySelector('#stat-lines');         if(sl)sl.textContent=lines;
+            const yl=document.querySelector('#stat-label-years');   if(yl)yl.textContent=lblYears;
+            const al=document.querySelector('#stat-label-apps');    if(al)al.textContent=lblApps;
+            const cl=document.querySelector('#stat-label-clients'); if(cl)cl.textContent=lblClients;
+            closeModal('stats-modal');
+            document.querySelectorAll('.stat-number[data-target]').forEach(el2 => {
+                const tg=parseInt(el2.dataset.target), t0=performance.now();
+                (function tick(now){const p=Math.min((now-t0)/1400,1);el2.textContent=Math.round(tg*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(tick);})(performance.now());
+            });
+            showToast('Stats updated! ✅','success');
+        } catch(err){ showToast('Error.','error'); console.error(err); }
+    });
+});
