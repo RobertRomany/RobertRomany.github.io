@@ -28,7 +28,7 @@
     <!-- Loading Screen -->
     <div id="loading-screen" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black">
         <div class="loading-logo">
-            <span class="loading-r">R</span><span class="loading-dot">.</span>
+            <span class="loading-r">RO</span><span class="loading-dot">.</span>
         </div>
         <div class="loading-bar-container">
             <div class="loading-bar-fill" id="loading-bar"></div>
@@ -110,7 +110,7 @@
                 </div>
 
                 <div class="editable-container">
-                    <p class="hero-greeting text-sm font-mono mb-2 tracking-widest" id="hero-greeting">👋 HELLO, WORLD! I'M</p>
+                    <p class="hero-greeting text-sm font-mono mb-2 tracking-widest" id="hero-greeting">HELLO, WORLD! I'M</p>
                     <h1 id="hero-title" class="text-5xl md:text-7xl font-black leading-tight transition-colors duration-500" style="font-family:'Orbitron',sans-serif">
                         <span id="hero-name" class="transition-colors duration-500">Robert<br>Romany</span>
                     </h1>
@@ -340,19 +340,21 @@
                 I'm always excited to discuss new projects or opportunities. Feel free to reach out!
             </p>
             <div class="flex flex-col items-center justify-center space-y-4">
-                <div id="email-container" class="flex flex-col md:flex-row items-center justify-center rounded-2xl p-4 transition-colors duration-500 gap-3">
-                    <span id="email-text" class="text-base md:text-lg font-mono transition-colors duration-500 break-all"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6614090403141214090b07081f4802031026010b070f0a4805090b">[email&#160;protected]</a></span>
-                    <button id="copy-email-btn" class="w-full justify-center md:w-auto p-3 rounded-xl flex items-center font-semibold transition-colors duration-500">
-                        <i data-feather="copy" class="w-5 h-5"></i>
-                        <span id="copy-btn-text" class="ml-2">Copy</span>
-                    </button>
-                </div>
-                <p id="copy-success-msg" class="text-green-400 h-5 -mt-2 transition-opacity opacity-0">Copied to clipboard!</p>
-                <a id="mailto-btn" href="/cdn-cgi/l/email-protection#40322f22253234322f2d212e396e24253600272d21292c6e232f2d" class="font-bold py-3 px-8 rounded-xl transition text-lg flex items-center space-x-2">
-                    <i data-feather="mail" class="w-5 h-5"></i>
-                    <span>Email Me Directly</span>
-                </a>
-            </div>
+    <div id="email-container" class="flex flex-col md:flex-row items-center justify-center rounded-2xl p-4 transition-colors duration-500 gap-3">
+        <span id="email-text" class="text-base md:text-lg font-mono transition-colors duration-500 break-all">robert.romany.dev@gmail.com</span>
+        
+        <button id="copy-email-btn" class="w-full justify-center md:w-auto p-3 rounded-xl flex items-center font-semibold transition-colors duration-500">
+            <i data-feather="copy" class="w-5 h-5"></i>
+            <span id="copy-btn-text" class="ml-2">Copy</span>
+        </button>
+    </div>
+    <p id="copy-success-msg" class="text-green-400 h-5 -mt-2 transition-opacity opacity-0">Copied to clipboard!</p>
+    
+    <a id="mailto-btn" href="mailto:robert.romany.dev@gmail.com" class="font-bold py-3 px-8 rounded-xl transition text-lg flex items-center space-x-2">
+        <i data-feather="mail" class="w-5 h-5"></i>
+        <span>Email Me Directly</span>
+    </a>
+</div>
         </section>
     </div>
 
@@ -556,7 +558,7 @@
                 <h3 class="text-2xl font-bold">Pending Reviews</h3>
                 <button class="modal-close text-2xl">&times;</button>
             </div>
-            <div id="            <div id="pending-testimonials-list" class="flex-grow overflow-y-auto space-y-4">
+            <div id="pending-testimonials-list" class="flex-grow overflow-y-auto space-y-4">
                 <div class="loader mx-auto"></div>
             </div>
         </div>
