@@ -110,11 +110,11 @@ function initTypewriter() {
     const el = document.getElementById('typewriter');
     if (!el) return;
     const texts = [
-        'Android Apps 📱',
-        'Kotlin Solutions 🛠️',
-        'Jetpack Compose UI ✨',
-        'Clean Architecture 🏗️',
-        'Scalable Apps 🚀',
+        'Android & (KMP\\CMP) Apps',
+        'Kotlin Solutions ',
+        'Jetpack Compose UI ',
+        'Clean Architecture ',
+        'Scalable Apps ',
     ];
     let i = 0, j = 0, isDeleting = false;
     function type() {
@@ -480,7 +480,8 @@ function applyTheme(themeName) {
     document.querySelectorAll('.modal-close').forEach(el => setClasses(el, theme.modalClose));
     [
         'login-submit-btn', 'project-submit-btn', 'principle-submit-btn',
-        'skill-submit-btn', 'about-submit-btn', 'text-edit-submit-btn', 'testimonial-submit-btn'
+        'skill-submit-btn', 'about-submit-btn', 'text-edit-submit-btn',
+        'testimonial-submit-btn', 'timeline-submit-btn', 'stats-submit-btn'
     ].forEach(id => {
         const el = document.getElementById(id);
         if (el) setClasses(el, theme.modalSubmit);
@@ -516,7 +517,7 @@ async function loadTimeline() {
     cont.innerHTML = '<div class="timeline-line"></div><div id="timeline-loader" class="loader mx-auto mt-8"></div>';
     try {
         let snap;
-        try { snap = await getDocs(query(collection(db, 'timeline'), orderBy('order'))); }
+        try { snap = await getDocs(query(collection(db, 'timeline'), orderBy('createdAt', 'asc'))); }
         catch { snap = await getDocs(collection(db, 'timeline')); }
         document.getElementById('timeline-loader')?.remove();
         if (snap.empty) { renderStaticTimeline(cont); return; }
@@ -558,27 +559,36 @@ function createTimelineCard(item, side) {
 
 window.handleEditTimeline = async id => {
     let data = {};
-    try { data = (await getDoc(doc(db, 'timeline', id))).data() || {}; } catch {}
+    // Try to load from Firestore first
+    try {
+        const snap = await getDoc(doc(db, 'timeline', id));
+        if (snap.exists()) data = snap.data();
+    } catch {}
+    // Fallback: use static defaults for 's1','s2','s3'
     const statics = {
-        s1: { year: '2023 – Present', role: 'Android Developer', company: 'Freelance', icon: 'briefcase', desc: '', tags: [] },
-        s2: { year: '2022 – 2023', role: 'IEEE Vice Head', company: 'IEEE Student Branch', icon: 'users', desc: '', tags: [] },
-        s3: { year: '2020 – 2024', role: 'B.Sc. Computer Science', company: 'University', icon: 'book', desc: '', tags: [] }
+        s1: { year: '2023 – Present', role: 'Android Developer', company: 'Freelance', icon: 'briefcase', desc: 'Building production-ready Android apps using Kotlin, Jetpack Compose and Clean Architecture.', tags: ['Kotlin','Jetpack Compose','MVVM'] },
+        s2: { year: '2022 – 2023', role: 'IEEE Vice Head', company: 'IEEE Student Branch', icon: 'users', desc: 'Technical leadership: workshops, events, and mentoring junior developers.', tags: ['Leadership','Mentoring','Android'] },
+        s3: { year: '2020 – 2024', role: 'B.Sc. Computer Science', company: 'University', icon: 'book', desc: 'Software engineering, algorithms, data structures, and mobile development.', tags: ['CS','Software Engineering','Algorithms'] }
     };
     if (!data.role) data = statics[id] || {};
+    // Store the id — if it's a static one (s1/s2/s3), we'll save it as a new Firestore doc
     document.getElementById('timeline-id').value = id;
-    document.getElementById('timeline-year').value = data.year || data.date || '';
-    document.getElementById('timeline-role').value = data.role || data.title || '';
+    document.getElementById('timeline-year').value    = data.year || data.date || '';
+    document.getElementById('timeline-role').value    = data.role || data.title || '';
     document.getElementById('timeline-company').value = data.company || '';
-    document.getElementById('timeline-icon').value = data.icon || 'briefcase';
-    document.getElementById('timeline-desc').value = data.desc || data.description || '';
-    document.getElementById('timeline-tags').value = (data.tags || []).join(', ');
+    document.getElementById('timeline-icon').value    = data.icon || 'briefcase';
+    document.getElementById('timeline-desc').value    = data.desc || data.description || '';
+    document.getElementById('timeline-tags').value    = (data.tags || []).join(', ');
     document.getElementById('timeline-modal-title').innerText = 'Edit Timeline Item';
     openModal('timeline-modal');
 };
 
 window.handleDeleteTimeline = async id => {
     if (!confirm('Delete this item?')) return;
-    try { await deleteDoc(doc(db, 'timeline', id)); } catch {}
+    // If it's a static item (s1/s2/s3), just reload — no Firestore doc to delete
+    if (!['s1','s2','s3'].includes(id)) {
+        try { await deleteDoc(doc(db, 'timeline', id)); } catch(e) { console.error(e); }
+    }
     loadTimeline();
     showToast('Deleted.', 'info');
 };
@@ -619,7 +629,7 @@ async function loadPrinciples() {
     const loader = document.getElementById('principles-loader');
     try {
         let snap;
-        try { snap = await getDocs(query(collection(db, 'principles'), orderBy('order'))); }
+        try { snap = await getDocs(query(collection(db, 'principles'), orderBy('createdAt', 'asc'))); }
         catch { snap = await getDocs(collection(db, 'principles')); }
         if (loader) loader.remove();
         grid.innerHTML = '';
@@ -657,7 +667,7 @@ async function loadSkills() {
     const loader = document.getElementById('skills-loader');
     try {
         let snap;
-        try { snap = await getDocs(query(collection(db, 'skills'), orderBy('order'))); }
+        try { snap = await getDocs(query(collection(db, 'skills'), orderBy('createdAt', 'asc'))); }
         catch { snap = await getDocs(collection(db, 'skills')); }
         if (loader) loader.remove();
         container.innerHTML = '';
@@ -691,7 +701,7 @@ async function loadProjects() {
     try {
         // Fallback: if 'order' field missing on old docs, getDocs without orderBy
         let snap;
-        try { snap = await getDocs(query(collection(db, 'projects'), orderBy('order'))); }
+        try { snap = await getDocs(query(collection(db, 'projects'), orderBy('createdAt', 'desc'))); }
         catch { snap = await getDocs(collection(db, 'projects')); }
         if (loader) loader.remove();
         grid.innerHTML = '';
@@ -715,7 +725,7 @@ function createProjectCard(p, theme) {
     card.className = `project-card ${theme.projectCard} cursor-pointer`;
     card.onclick = () => showProjectDetails(p.id);
     card.innerHTML = `
-        <img src="${p.thumbnail || 'https://placehold.co/600x400'}" alt="${p.title}" class="w-full h-48 object-cover">
+        <img src="${p.thumbnail || 'https://placehold.co/600x400'}" alt="${p.title}" class="w-full h-72 object-cover">
         <div class="p-5">
             <div class="flex justify-between items-start mb-2">
                 <h3 class="font-bold text-lg">${p.title}</h3>
@@ -925,7 +935,16 @@ document.addEventListener('DOMContentLoaded', () => {
         isAdmin = !!user;
         document.getElementById('login-btn').classList.toggle('hidden', isAdmin);
         document.getElementById('logout-btn').classList.toggle('hidden', !isAdmin);
-        document.querySelectorAll('#add-project-btn, #add-principle-btn, #add-skill-btn').forEach(btn => btn.classList.toggle('hidden', !isAdmin));
+        // Show/hide ALL admin buttons
+        ['add-project-btn','add-principle-btn','add-skill-btn','add-timeline-btn','edit-stats-btn'].forEach(id => {
+            const b = document.getElementById(id);
+            if (b) b.classList.toggle('hidden', !isAdmin);
+        });
+        // About edit button - always visible for admin, hidden for guests
+        const editAboutBtn = document.getElementById('edit-about-btn');
+        if (editAboutBtn) {
+            editAboutBtn.style.display = isAdmin ? 'flex' : 'none';
+        }
         if (isAdmin) {
             // Add testimonials admin button to navbar area
             const navLogoAccent = document.getElementById('nav-logo-accent');
@@ -991,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sourceLink: document.getElementById('project-source-link').value,
             liveLink: document.getElementById('project-live-link').value,
             images,
-            order: Date.now(),
+            createdAt: serverTimestamp(),
         };
         try {
             if (id) await setDoc(doc(db, 'projects', id), data, { merge: true });
@@ -1015,9 +1034,8 @@ document.addEventListener('DOMContentLoaded', () => {
             title: document.getElementById('principle-title').value,
             description: document.getElementById('principle-description').value,
             icon: document.getElementById('principle-icon').value,
-            order: id ? undefined : Date.now(),
         };
-        if (!id) data.order = Date.now();
+        if (!id) data.createdAt = serverTimestamp();
         try {
             if (id) await updateDoc(doc(db, 'principles', id), data);
             else await addDoc(collection(db, 'principles'), data);
@@ -1034,11 +1052,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = {
             name: document.getElementById('skill-name').value,
             iconClass: document.getElementById('skill-icon-class').value,
-            order: id ? undefined : Date.now(),
         };
         try {
             if (id) await updateDoc(doc(db, 'skills', id), data);
-            else await addDoc(collection(db, 'skills'), { ...data, order: Date.now() });
+            else await addDoc(collection(db, 'skills'), { ...data, createdAt: serverTimestamp() });
             closeModal('skill-modal');
             loadSkills();
             showToast('Skill saved!', 'success');
@@ -1233,14 +1250,15 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(create, 1200);
     })();
 
-    // Edit buttons visibility for admin
+    // Edit buttons visibility for admin — show on hover, keep about btn always visible
     document.querySelectorAll('.edit-icon').forEach(btn => {
         const parent = btn.closest('.editable-container');
         if (parent) {
-            parent.addEventListener('mouseenter', () => {
-                if (isAdmin) btn.style.display = 'block';
+            parent.addEventListener('mouseenter', () => { if (isAdmin) btn.style.display = 'flex'; });
+            parent.addEventListener('mouseleave', () => {
+                // Keep about-btn permanently visible for admin
+                if (btn.id !== 'edit-about-btn') btn.style.display = 'none';
             });
-            parent.addEventListener('mouseleave', () => { btn.style.display = 'none'; });
         }
     });
 
@@ -1319,10 +1337,24 @@ document.addEventListener('DOMContentLoaded', () => {
             tags:    document.getElementById('timeline-tags').value.split(',').map(t => t.trim()).filter(Boolean)
         };
         try {
-            if (id) await setDoc(doc(db, 'timeline', id), data, { merge: true });
-            else    await addDoc(collection(db, 'timeline'), { ...data, order: Date.now() });
-            closeModal('timeline-modal'); loadTimeline(); showToast('Saved!', 'success');
-        } catch(err) { showToast('Error.', 'error'); console.error(err); }
+            // Static items (s1/s2/s3) don't exist in Firestore → create new doc
+            const isStatic = ['s1','s2','s3'].includes(id);
+            if (id && !isStatic) {
+                await setDoc(doc(db, 'timeline', id), data, { merge: true });
+            } else {
+                await addDoc(collection(db, 'timeline'), { ...data, createdAt: serverTimestamp() });
+            }
+            closeModal('timeline-modal');
+            loadTimeline();
+            showToast('Timeline saved! ✅', 'success');
+        } catch(err) {
+            if (err.code === 'permission-denied') {
+                showToast('❌ Permission denied — update Firestore Rules', 'error', 6000);
+            } else {
+                showToast('Error: ' + err.message, 'error', 6000);
+            }
+            console.error('Timeline save error:', err);
+        }
     });
 
     // Stats
