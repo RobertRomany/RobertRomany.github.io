@@ -542,8 +542,24 @@ async function loadTimeline() {
         catch { snap = await getDocs(collection(db, 'timeline')); }
         document.getElementById('timeline-loader')?.remove();
         if (snap.empty) { renderStaticTimeline(cont); return; }
+
+        // Extract all items and sort by first year in the year field (newest first)
+        const items = [];
+        snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+        items.sort((a, b) => {
+            // Extract first 4-digit year from strings like "2023 – Present", "2022 – 2023"
+            const extractYear = str => {
+                const match = String(str || '').match(/\d{4}/);
+                return match ? parseInt(match[0]) : 0;
+            };
+            return extractYear(b.year || b.date) - extractYear(a.year || a.date);
+        });
+
         let idx = 0;
-        snap.forEach(d => { cont.appendChild(createTimelineCard({ id: d.id, ...d.data() }, idx % 2 === 0 ? 'timeline-left' : 'timeline-right')); idx++; });
+        items.forEach(item => {
+            cont.appendChild(createTimelineCard(item, idx % 2 === 0 ? 'timeline-left' : 'timeline-right'));
+            idx++;
+        });
         feather.replace();
         document.querySelectorAll('.animate-on-scroll:not(.is-visible)').forEach(e => scrollObserver && scrollObserver.observe(e));
     } catch (e) { document.getElementById('timeline-loader')?.remove(); renderStaticTimeline(cont); }
@@ -630,17 +646,30 @@ async function loadSiteSettings() {
             if (d.text)     document.getElementById('about-text').textContent = d.text;
             if (d.imageUrl) document.getElementById('about-image').src        = d.imageUrl;
         }
-        // Stats numbers
+        // Stats numbers — always wait for Firestore, never show hardcoded defaults
         const statsSnap = await getDoc(doc(db, 'site_content', 'stats'));
+        const statYearsEl   = document.getElementById('stat-years');
+        const statAppsEl    = document.getElementById('stat-apps');
+        const statClientsEl = document.getElementById('stat-clients');
+        const statLinesEl   = document.querySelector('#stat-lines');
+        const statLblYears  = document.querySelector('#stat-label-years');
+        const statLblApps   = document.querySelector('#stat-label-apps');
+        const statLblClients= document.querySelector('#stat-label-clients');
         if (statsSnap.exists()) {
             const d = statsSnap.data();
-            if (d.years != null)   { const e=document.getElementById('stat-years');   if(e){e.dataset.target=d.years;  e.textContent='0';} }
-            if (d.apps != null)    { const e=document.getElementById('stat-apps');    if(e){e.dataset.target=d.apps;   e.textContent='0';} }
-            if (d.clients != null) { const e=document.getElementById('stat-clients'); if(e){e.dataset.target=d.clients;e.textContent='0';} }
-            if (d.lines)   { const e=document.querySelector('#stat-lines');        if(e) e.textContent=d.lines; }
-            if (d.lblYears)  { const e=document.querySelector('#stat-label-years');  if(e) e.textContent=d.lblYears; }
-            if (d.lblApps)   { const e=document.querySelector('#stat-label-apps');   if(e) e.textContent=d.lblApps; }
-            if (d.lblClients){ const e=document.querySelector('#stat-label-clients');if(e) e.textContent=d.lblClients; }
+            if (d.years   != null && statYearsEl)   { statYearsEl.dataset.target   = d.years;   statYearsEl.textContent   = '0'; }
+            if (d.apps    != null && statAppsEl)    { statAppsEl.dataset.target    = d.apps;    statAppsEl.textContent    = '0'; }
+            if (d.clients != null && statClientsEl) { statClientsEl.dataset.target = d.clients; statClientsEl.textContent = '0'; }
+            if (d.lines      && statLinesEl)    statLinesEl.textContent    = d.lines;
+            if (d.lblYears   && statLblYears)   statLblYears.textContent   = d.lblYears;
+            if (d.lblApps    && statLblApps)    statLblApps.textContent    = d.lblApps;
+            if (d.lblClients && statLblClients) statLblClients.textContent = d.lblClients;
+        } else {
+            // No stats doc yet — hide the numbers until admin sets them
+            if (statYearsEl)   { statYearsEl.dataset.target = '0'; statYearsEl.textContent = '—'; }
+            if (statAppsEl)    { statAppsEl.dataset.target  = '0'; statAppsEl.textContent  = '—'; }
+            if (statClientsEl) { statClientsEl.dataset.target='0'; statClientsEl.textContent='—'; }
+            if (statLinesEl)   statLinesEl.textContent = '—';
         }
     } catch (e) { console.warn('loadSiteSettings:', e); }
 }
@@ -1413,4 +1442,3 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(err){ showToast('Error.','error'); console.error(err); }
     });
 });
-
