@@ -657,9 +657,9 @@ async function loadSiteSettings() {
         const statLblClients= document.querySelector('#stat-label-clients');
         if (statsSnap.exists()) {
             const d = statsSnap.data();
-            if (d.years   != null && statYearsEl)   { statYearsEl.dataset.target   = d.years;   statYearsEl.textContent   = '0'; }
-            if (d.apps    != null && statAppsEl)    { statAppsEl.dataset.target    = d.apps;    statAppsEl.textContent    = '0'; }
-            if (d.clients != null && statClientsEl) { statClientsEl.dataset.target = d.clients; statClientsEl.textContent = '0'; }
+            if (d.years   != null && statYearsEl)   { statYearsEl.dataset.target   = d.years;   statYearsEl.textContent   = '—'; }
+            if (d.apps    != null && statAppsEl)    { statAppsEl.dataset.target    = d.apps;    statAppsEl.textContent    = '—'; }
+            if (d.clients != null && statClientsEl) { statClientsEl.dataset.target = d.clients; statClientsEl.textContent = '—'; }
             if (d.lines      && statLinesEl)    statLinesEl.textContent    = d.lines;
             if (d.lblYears   && statLblYears)   statLblYears.textContent   = d.lblYears;
             if (d.lblApps    && statLblApps)    statLblApps.textContent    = d.lblApps;
@@ -1442,3 +1442,4 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(err){ showToast('Error.','error'); console.error(err); }
     });
 });
+
