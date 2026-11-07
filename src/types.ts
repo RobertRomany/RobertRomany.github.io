@@ -5,6 +5,7 @@ export interface Project {
   screens?: string[]; // phone screenshots for the case study, in YOUR order
   platforms?: string[]; technologies?: string[]; sourceLink?: string; liveLink?: string;
   role?: string; problem?: string; result?: string;
+  summary?: string; hidden?: boolean;
   why?: string; architecture?: string; video?: string;
 }
 export interface Screen { url: string; caption?: string }

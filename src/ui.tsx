@@ -2,18 +2,10 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { Project, Screen } from './types';
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const fmt = () => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: false });
-function Clock() {
-  const [t, setT] = useState(fmt);
-  useEffect(() => { const i = setInterval(() => setT(fmt()), 20000); return () => clearInterval(i); }, []);
-  return <span>{t}</span>;
-}
-
 export function PhoneFrame({ children, label }: { children: ReactNode; label?: string }) {
   return (
     <div className="phone" role="img" aria-label={label}>
       <div className="screen">
-        <div className="sbar"><Clock /><span>5G <i className="batt" /></span></div>
         <i className="hole" />{children}<i className="pill" />
       </div>
     </div>

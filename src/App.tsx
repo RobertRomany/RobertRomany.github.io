@@ -43,6 +43,7 @@ function Layout() {
 function Hero() {
   const hero = useHeroText();
   const home = useHome();
+  const { items: skills } = useCollection<Skill>('skills');
   return (
     <section className="hero" id="top"><div className="wrap">
       <div>
@@ -54,6 +55,7 @@ function Hero() {
           <a className="btn" href="#contact">Start a project</a>
         </div>
         <span className="avail"><b />Open to Android / KMP roles and freelance projects</span>
+        {skills.length > 0 && <div className="strip">{skills.slice(0, 7).map(k => <i key={k.id} className={`${k.iconClass} colored`} role="img" aria-label={k.name} title={k.name} />)}</div>}
       </div>
       <Phone screens={home.phoneScreens || []} />
     </div></section>
@@ -70,11 +72,12 @@ const imgProps = ({ p, f }: Entry) => ({
 function Work() {
   const { items: projects, loading, error } = useCollection<Project>('projects', 'createdAt', 'desc');
   const home = useHome();
+  const visible = projects.filter(p => !p.hidden);
   const picks = (home.featured || [])
-    .map(f => { const p = projects.find(x => x.id === f.projectId || x.slug === f.projectId); return p ? { p, f } : null; })
+    .map(f => { const p = visible.find(x => x.id === f.projectId || x.slug === f.projectId); return p ? { p, f } : null; })
     .filter((x): x is Entry => !!x);
   const used = new Set(picks.map(e => e.p.id));
-  const ordered: Entry[] = [...picks, ...projects.filter(p => !used.has(p.id)).map(p => ({ p, f: { projectId: p.id } }))];
+  const ordered: Entry[] = [...picks, ...visible.filter(p => !used.has(p.id)).map(p => ({ p, f: { projectId: p.id } }))];
   const [lead, ...others] = ordered;
   return (
     <section id="work"><div className="wrap">
@@ -84,13 +87,13 @@ function Work() {
       {lead && (
         <Link className="feature" to={`/work/${slugOf(lead.p)}`}>
           <img {...imgProps(lead)} />
-          <div className="body"><h3>{lead.p.title}</h3><p>{lead.p.description}</p><Chips p={lead.p} n={6} /><span className="more">Read the case study</span></div>
+          <div className="body"><h3>{lead.p.title}</h3><p className="clamp">{lead.p.summary || lead.p.description}</p><Chips p={lead.p} n={6} /><span className="more">Read the case study</span></div>
         </Link>)}
       <div className="grid">
         {others.map(e => (
           <Link key={e.p.id} className="card" to={`/work/${slugOf(e.p)}`}>
             <img {...imgProps(e)} loading="lazy" />
-            <div className="body"><h3>{e.p.title}</h3><p>{e.p.description}</p><Chips p={e.p} /></div>
+            <div className="body"><h3>{e.p.title}</h3><p>{e.p.summary || e.p.description}</p><Chips p={e.p} /></div>
           </Link>))}
       </div>
     </div></section>

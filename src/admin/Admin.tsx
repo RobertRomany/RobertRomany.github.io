@@ -76,14 +76,14 @@ function Homepage({ projects }: { projects: Project[] }) {
 }
 
 const TEXT: [keyof Project, string, boolean?][] = [
-  ['title', 'Title'], ['slug', 'Slug (URL name)'], ['description', 'Description', true], ['thumbnail', 'Thumbnail URL'],
+  ['title', 'Title'], ['slug', 'Slug (URL name)'], ['summary', 'Short summary for cards (1-2 sentences)', true], ['description', 'Full description (case study page)', true], ['thumbnail', 'Thumbnail URL'],
   ['cover', 'Cover image URL (any aspect ratio)'], ['coverFocus', 'Cover focus (e.g. top)'], ['liveLink', 'Live / Play Store link'],
   ['sourceLink', 'Source code link'], ['role', 'My role', true], ['why', 'Why these technical choices', true], ['architecture', 'Architecture diagram image'], ['video', 'Demo video URL (mp4/webm)'], ['problem', 'The problem', true], ['result', 'The result', true],
 ];
 const list = (s: string, sep: RegExp) => s.split(sep).map(x => x.trim()).filter(Boolean);
 
 function ProjectEditor({ p, onDone }: { p: Project | null; onDone: () => void }) {
-  const init = () => ({ ...Object.fromEntries(TEXT.map(([k]) => [k, String(p?.[k] ?? '')])), coverFit: p?.coverFit || 'cover',
+  const init = () => ({ ...Object.fromEntries(TEXT.map(([k]) => [k, String(p?.[k] ?? '')])), coverFit: p?.coverFit || 'cover', hidden: p?.hidden ? '1' : '',
     platforms: (p?.platforms || []).join(', '), technologies: (p?.technologies || []).join(', '), screens: (p?.screens || []).join('\n') });
   const [d, setD] = useState<Record<string, string>>(init); const [msg, setMsg] = useState('');
   useEffect(() => { setD(init()); setMsg(''); }, [p?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -93,6 +93,7 @@ function ProjectEditor({ p, onDone }: { p: Project | null; onDone: () => void })
     const data: Record<string, unknown> = {}; const empty = () => (p ? deleteField() : undefined);
     for (const [k] of TEXT) data[k] = d[k].trim() || empty();
     data.coverFit = d.coverFit;
+    data.hidden = d.hidden ? true : empty();
     for (const [k, v] of [['platforms', list(d.platforms, /,/)], ['technologies', list(d.technologies, /,/)], ['screens', list(d.screens, /\n/)]] as const) data[k] = v.length ? v : empty();
     Object.keys(data).forEach(k => data[k] === undefined && delete data[k]);
     try {
@@ -105,6 +106,7 @@ function ProjectEditor({ p, onDone }: { p: Project | null; onDone: () => void })
     <div className="editor">
       {TEXT.map(([k, l, a]) => <Field key={k} label={l} value={d[k]} onChange={set(k)} area={a} />)}
       <label className="fld"><span>Cover fit</span><select value={d.coverFit} onChange={e => set('coverFit')(e.target.value)}><option value="cover">cover (fill)</option><option value="contain">contain (whole image)</option></select></label>
+      <label className="chk"><input type="checkbox" checked={d.hidden === '1'} onChange={e => set('hidden')(e.target.checked ? '1' : '')} /> Hide this project from the site</label>
       <Field label="Platforms" value={d.platforms} onChange={set('platforms')} hint="comma separated, e.g. android, ios" />
       <Field label="Technologies" value={d.technologies} onChange={set('technologies')} hint="comma separated" />
       <Field label="Phone screenshots" value={d.screens} onChange={set('screens')} area hint="one image URL per line, in the order you want" />

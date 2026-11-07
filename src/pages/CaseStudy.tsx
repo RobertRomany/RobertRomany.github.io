@@ -9,7 +9,9 @@ export default function CaseStudy() {
   const { items, loading } = useCollection<Project>('projects', 'createdAt', 'desc');
   const i = items.findIndex(p => slugOf(p) === slug);
   const p = items[i];
-  const next = items.length > 1 && i >= 0 ? items[(i + 1) % items.length] : null;
+  const shown = items.filter(x => !x.hidden);
+  const k = shown.findIndex(x => x.id === p?.id);
+  const next = shown.length > 1 && k >= 0 ? shown[(k + 1) % shown.length] : null;
   useEffect(() => { window.scrollTo(0, 0); document.title = p ? `${p.title} | Robert Romany` : 'Robert Romany'; }, [p]);
 
   if (loading) return <main className="wrap page"><div className="skel" /></main>;
@@ -24,7 +26,7 @@ export default function CaseStudy() {
       <Chips p={p} n={10} />
       {cover && <img className="banner" src={cover} alt={p.title} style={{ objectFit: p.coverFit || 'cover', objectPosition: p.coverFocus }} />}
       <div className="case">
-        <p className="lead">{p.description}</p>
+        <p className="lead prewrap">{p.description}</p>
         {facts.length > 0 && <dl className="facts">{facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>}
       </div>
       {p.why && <section className="sect"><h2>Why these choices</h2><p>{p.why}</p></section>}

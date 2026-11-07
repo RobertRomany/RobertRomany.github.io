@@ -17,7 +17,8 @@ async function fetchProjects() {
     const j = await r.json();
     for (const d of j.documents || []) {
       const f = d.fields || {};
-      out.push({ slug: str(f.slug) || d.name.split('/').pop(), title: str(f.title), description: str(f.description), image: abs(str(f.cover) || str(f.thumbnail)) });
+      if (f.hidden?.booleanValue) continue;
+      out.push({ slug: str(f.slug) || d.name.split('/').pop(), title: str(f.title), description: str(f.summary) || str(f.description), image: abs(str(f.cover) || str(f.thumbnail)) });
     }
     token = j.nextPageToken || '';
   } while (token);
