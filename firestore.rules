@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Only YOU can write. Replace the uid (Firebase console > Authentication > Users > User UID).
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == 'REPLACE_WITH_YOUR_UID';
+    }
+
+    match /projects/{id}   { allow read: if true; allow write: if isAdmin(); }
+    match /skills/{id}     { allow read: if true; allow write: if isAdmin(); }
+    match /principles/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /timeline/{id}   { allow read: if true; allow write: if isAdmin(); }
+    match /site_content/{id} { allow read: if true; allow write: if isAdmin(); }
+
+    // Visitor counter was removed from the new site.
+    match /siteStats/{id} { allow read: if true; allow write: if isAdmin(); }
+
+    match /testimonials/{id} {
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create: if request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasOnly(['name','role','message','rating','status','timestamp'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60
+        && request.resource.data.message is string && request.resource.data.message.size() <= 600
+        && request.resource.data.rating in [1,2,3,4,5];
+      allow update, delete: if isAdmin();
+    }
+
+    match /proposals/{id} {
+      allow get: if true;            // the client opens one proposal by its link
+      allow list: if isAdmin();      // nobody can list all your proposals
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        resource.data.status == 'open' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['selections'])
+      );
+    }
+  }
+}
