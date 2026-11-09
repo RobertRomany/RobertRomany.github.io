@@ -35,7 +35,7 @@ function Layout() {
         </nav>
       </div></header>
       <Outlet />
-      <footer><div className="wrap"><span>© {new Date().getFullYear()} Robert Romany Elshahat</span><span>Tanta, Egypt</span></div></footer>
+      <footer><div className="wrap"><span>© {new Date().getFullYear()} Robert Romany Elshahat</span><span>Tanta, Egypt · v10 · built {__BUILD__}</span></div></footer>
     </>
   );
 }

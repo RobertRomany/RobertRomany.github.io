@@ -147,7 +147,7 @@ function Panel({ user }: { user: User }) {
 export default function Admin() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   useEffect(() => {
-    document.documentElement.dataset.theme = 'dark';
+    document.documentElement.dataset.theme = 'dark'; document.title = 'Admin | Robert Romany';
     const m = document.createElement('meta'); m.name = 'robots'; m.content = 'noindex,nofollow'; document.head.append(m);
     const off = onAuthStateChanged(auth, setUser);
     return () => { off(); m.remove(); };
