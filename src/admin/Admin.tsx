@@ -78,7 +78,7 @@ function Homepage({ projects }: { projects: Project[] }) {
 const TEXT: [keyof Project, string, boolean?][] = [
   ['title', 'Title'], ['slug', 'Slug (URL name)'], ['summary', 'Short summary for cards (1-2 sentences)', true], ['description', 'Full description (case study page)', true], ['thumbnail', 'Thumbnail URL'],
   ['cover', 'Cover image URL (any aspect ratio)'], ['coverFocus', 'Cover focus (e.g. top)'], ['liveLink', 'Live / Play Store link'],
-  ['sourceLink', 'Source code link'], ['role', 'My role', true], ['why', 'Why these technical choices', true], ['architecture', 'Architecture diagram image'], ['video', 'Demo video URL (mp4/webm)'], ['problem', 'The problem', true], ['result', 'The result', true],
+  ['sourceLink', 'Source code link'], ['role', 'My role', true], ['why', 'Why these technical choices', true], ['architecture', 'Architecture diagram image'], ['video', 'Demo video (YouTube link, or direct mp4/webm)'], ['problem', 'The problem', true], ['result', 'The result', true],
 ];
 const list = (s: string, sep: RegExp) => s.split(sep).map(x => x.trim()).filter(Boolean);
 

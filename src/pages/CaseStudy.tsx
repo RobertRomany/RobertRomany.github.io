@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LINKS, slugOf, useCollection } from '../data';
 import { Chips, PhoneFrame } from '../ui';
+import { youtubeId } from '../video';
 import type { Project } from '../types';
 
 export default function CaseStudy() {
@@ -31,7 +32,12 @@ export default function CaseStudy() {
       </div>
       {p.why && <section className="sect"><h2>Why these choices</h2><p>{p.why}</p></section>}
       {p.architecture && <section className="sect"><h2>Architecture</h2><img className="banner" src={p.architecture} alt={`${p.title} architecture diagram`} style={{ objectFit: 'contain' }} loading="lazy" /></section>}
-      {p.video && <section className="sect"><h2>Demo</h2><video className="banner" src={p.video} controls playsInline preload="metadata" /></section>}
+      {p.video && (
+        <section className="sect"><h2>Demo</h2>
+          {youtubeId(p.video)
+            ? <div className="yt"><iframe src={`https://www.youtube-nocookie.com/embed/${youtubeId(p.video)}`} title={`${p.title} demo`} loading="lazy" allow="encrypted-media; picture-in-picture; fullscreen" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" /></div>
+            : <video className="banner" src={p.video} controls playsInline preload="metadata" />}
+        </section>)}
       <div className="cta">
         {p.liveLink && <a className="btn primary" href={p.liveLink} target="_blank" rel="noreferrer">Open the app</a>}
         {p.sourceLink && <a className="btn" href={p.sourceLink} target="_blank" rel="noreferrer">Source code</a>}
