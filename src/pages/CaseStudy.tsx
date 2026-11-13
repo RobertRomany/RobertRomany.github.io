@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LINKS, slugOf, useCollection } from '../data';
-import { Chips, PhoneFrame } from '../ui';
+import { Chips } from '../ui';
+import Gallery from '../Gallery';
 import { youtubeId } from '../video';
 import type { Project } from '../types';
 
@@ -43,10 +44,7 @@ export default function CaseStudy() {
         {p.sourceLink && <a className="btn" href={p.sourceLink} target="_blank" rel="noreferrer">Source code</a>}
         <a className="btn" href={LINKS.linkedin} target="_blank" rel="noreferrer">Talk to me</a>
       </div>
-      {p.screens && p.screens.length > 0 && (
-        <div className="gallery" aria-label="Screens">
-          {p.screens.map((u, k) => <PhoneFrame key={u + k} label={`${p.title} screen ${k + 1}`}><img className="on" src={u} alt="" loading="lazy" /></PhoneFrame>)}
-        </div>)}
+      {p.screens && p.screens.length > 0 && <Gallery screens={p.screens} title={p.title} />}
       {next && <Link className="next" to={`/work/${slugOf(next)}`}><span>Next project</span><b>{next.title}</b></Link>}
     </main>
   );
