@@ -19,14 +19,15 @@ export default function Gallery({ screens, title }: { screens: string[]; title: 
   useEffect(() => { update(); window.addEventListener('resize', update); return () => window.removeEventListener('resize', update); }, [update, screens.length]);
 
   const behavior = (): ScrollBehavior => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
+  const pad = () => (track.current ? parseFloat(getComputedStyle(track.current).paddingLeft) || 0 : 0);
   const goTo = (i: number) => {
     const el = track.current; const c = el?.children[i] as HTMLElement | undefined; if (!el || !c) return;
-    el.scrollTo({ left: c.offsetLeft - (el.clientWidth - c.offsetWidth) / 2, behavior: behavior() });
+    el.scrollTo({ left: c.offsetLeft - pad(), behavior: behavior() }); // the screen lands at the left edge
   };
   const nearest = () => {
     const el = track.current; if (!el) return 0;
-    const mid = el.scrollLeft + el.clientWidth / 2; let best = 0, gap = Infinity;
-    Array.from(el.children).forEach((c, i) => { const h = c as HTMLElement; const g = Math.abs(h.offsetLeft + h.offsetWidth / 2 - mid); if (g < gap) { gap = g; best = i; } });
+    let best = 0, gap = Infinity;
+    Array.from(el.children).forEach((c, i) => { const g = Math.abs((c as HTMLElement).offsetLeft - pad() - el.scrollLeft); if (g < gap) { gap = g; best = i; } });
     return best;
   };
   const step = (dir: 1 | -1) => goTo(Math.min(screens.length - 1, Math.max(0, nearest() + dir)));
@@ -43,14 +44,14 @@ export default function Gallery({ screens, title }: { screens: string[]; title: 
 
   return (
     <div className="gal">
-      {screens.length > 1 && <button className="gal-btn prev" aria-label="Previous screen" disabled={!edge.prev} onClick={() => step(-1)}><Chevron dir="l" /></button>}
+      {screens.length > 1 && <button className="gal-btn gal-prev" aria-label="Previous screen" disabled={!edge.prev} onClick={() => step(-1)}><Chevron dir="l" /></button>}
       <div ref={track} className={`gallery${dragging ? ' dragging' : ''}`} role="region" aria-label={`${title} screens`} tabIndex={0}
         onScroll={update} onKeyDown={key} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         {screens.map((u, k) => (
           <PhoneFrame key={u + k} label={`${title} screen ${k + 1} of ${screens.length}`}><img className="on" src={u} alt="" draggable={false} loading="lazy" /></PhoneFrame>
         ))}
       </div>
-      {screens.length > 1 && <button className="gal-btn next" aria-label="Next screen" disabled={!edge.next} onClick={() => step(1)}><Chevron dir="r" /></button>}
+      {screens.length > 1 && <button className="gal-btn gal-next" aria-label="Next screen" disabled={!edge.next} onClick={() => step(1)}><Chevron dir="r" /></button>}
     </div>
   );
 }

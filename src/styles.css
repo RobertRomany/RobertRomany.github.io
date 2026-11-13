@@ -157,11 +157,12 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
 
 /* phone gallery: drag, swipe, arrows; no visible scrollbar */
 .gal{position:relative;margin-top:24px}
-.gallery{display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;padding:40px calc(50% - min(150px,34vw));scrollbar-width:none;cursor:grab;overscroll-behavior-x:contain}
+.gallery{display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;padding:40px 64px;scroll-padding-inline:64px;position:relative;scrollbar-width:none;cursor:grab;overscroll-behavior-x:contain}
 .gallery::-webkit-scrollbar{display:none}
 .gallery.dragging{scroll-snap-type:none;cursor:grabbing;user-select:none}
-.gallery .phone{flex:none;scroll-snap-align:center;user-select:none}.gallery img{-webkit-user-drag:none;pointer-events:none}
+.gallery .phone{flex:none;scroll-snap-align:start;user-select:none}.gallery img{-webkit-user-drag:none;pointer-events:none}
 .gal-btn{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:color-mix(in srgb,var(--ink) 70%,transparent);backdrop-filter:blur(8px);color:var(--text);display:grid;place-items:center;cursor:pointer;transition:opacity .2s,border-color .2s,color .2s}
 .gal-btn:hover:not(:disabled){border-color:var(--signal);color:var(--signal)}.gal-btn:disabled{opacity:.25;cursor:default}
-.gal-btn.prev{left:8px}.gal-btn.next{right:8px}
-@media(hover:none){.gal-btn{display:none}}
+.gal-prev{left:8px}.gal-next{right:8px}
+.gallery:focus-visible{outline-offset:-3px;border-radius:20px}
+@media(hover:none){.gal-btn{display:none}.gallery{padding-inline:16px;scroll-padding-inline:16px}}
