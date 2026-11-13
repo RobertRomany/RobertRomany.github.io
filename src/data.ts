@@ -32,7 +32,7 @@ export const useHome = (): HomeContent => ({ ...defaults, ...(useDocument<HomeCo
 export const useHeroText = () => useDocument<{ subtitle?: string }>('site_content', 'hero');
 export const slugOf = (p: Project) => p.slug || p.id;
 
-export const CV_URL = 'https://drive.google.com/file/d/1n2hG5sEccsvmQ8lGFIOWe4UccxXXXFj8/view?usp=sharing';
+export const CV_URL = 'https://drive.google.com/file/d/1So3iyEaXK-kq9pp9absZHYk8kMESa05h/view?usp=sharing';
 export const EMAIL = 'robert.romany.dev@gmail.com';
 export const LINKS = { linkedin: 'https://www.linkedin.com/in/robert-romany-dev/', github: 'https://github.com/Robert-x1' };
 export const clearCache = () => cache.clear();
